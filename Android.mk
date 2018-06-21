@@ -107,6 +107,10 @@ LOCAL_CFLAGS += -pthread
 LOCAL_CFLAGS += -g3
 LOCAL_CFLAGS += -Wno-missing-field-initializers -Wno-format-zero-length
 
+ifneq ($(TA_DIR),)
+LOCAL_CFLAGS += -DTA_DIR=\"$(TA_DIR)\"
+endif
+
 ## $(OPTEE_BIN) is the path of tee.bin like
 ## out/target/product/hikey/optee/arm-plat-hikey/core/tee.bin
 ## it will be generated after build the optee_os with target BUILD_OPTEE_OS
