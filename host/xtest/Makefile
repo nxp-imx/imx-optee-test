@@ -24,6 +24,13 @@ OBJCOPY		?= $(CROSS_COMPILE)objcopy
 OBJDUMP		?= $(CROSS_COMPILE)objdump
 READELF		?= $(CROSS_COMPILE)readelf
 
+# by default, the client application is compiled as the kernel of optee-os
+ifeq ($(CFG_ARM64_core),y)
+COMPILE_NS_USER ?= 64
+else
+COMPILE_NS_USER ?= 32
+endif
+
 # OpenSSL is used by GP tests series 8500 and Mbed TLS test 8103
 ifneq ($(CFG_GP_PACKAGE_PATH)$(filter y,$(CFG_TA_MBEDTLS)),)
 CFLAGS += -DOPENSSL_FOUND=1
@@ -126,15 +133,6 @@ CFLAGS += -I../../ta/GP_TTA_answerErrorTo_OpenSession
 CFLAGS += -I../../ta/GP_TTA_answerSuccessTo_OpenSession_Invoke
 CFLAGS += -I../../ta/GP_TTA_check_OpenSession_with_4_parameters
 CFLAGS += -I../../ta/GP_TTA_testingClientAPI
-
-
-# by default, the client application is compiled as the kernel of optee-os
-ifeq ($(CFG_ARM32_core),y)
-COMPILE_NS_USER ?= 32
-else
-COMPILE_NS_USER ?= 64
-endif
-
 endif
 
 TA_DIR ?= /lib/optee_armtz
