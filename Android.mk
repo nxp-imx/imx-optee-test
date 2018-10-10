@@ -18,8 +18,18 @@ TA_DEV_KIT_DIR ?= ../invalid_include_path
 -include $(TA_DEV_KIT_DIR)/host_include/conf.mk
 
 include $(CLEAR_VARS)
+
+MAJOR_VERSION := $(shell echo $(PLATFORM_VERSION) | cut -d "." -f1)
+ANDROID_VERSION_GE_O := $(shell if [ $(MAJOR_VERSION) -ge 8 ];then echo "true";fi)
+
 LOCAL_MODULE := xtest
+ifeq ($(ANDROID_VERSION_GE_O), true)
+LOCAL_VENDOR_MODULE := true
+endif
+LOCAL_PROPRIETARY_MODULE := true
 LOCAL_SHARED_LIBRARIES := libteec
+
+TA_DIR ?= /vendor/lib/optee_armtz
 
 srcs := regression_1000.c
 
