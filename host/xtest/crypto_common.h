@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
  * Copyright (c) 2015, Linaro Limited
+ * Copyright 2018 NXP
+ *
  * All rights reserved.
  */
 
@@ -46,6 +48,8 @@ int hash_perf_runner_cmd_parser(int argc, char *argv[]);
 void hash_perf_run_test(int algo, size_t size, unsigned int n,
 				unsigned int l, int random_in, int offset,
 				int warmup, int verbosity);
+
+int crypto_perf_runner_cmd_parser(int argc, char *argv[]);
 
 #ifdef CFG_SECURE_DATA_PATH
 int sdp_basic_runner_cmd_parser(int argc, char *argv[]);

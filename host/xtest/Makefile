@@ -81,7 +81,8 @@ srcs +=	adbg/src/adbg_case.c \
 	xtest_helpers.c \
 	xtest_main.c \
 	xtest_test.c \
-	xtest_uuid_helpers.c
+	xtest_uuid_helpers.c \
+	crypto_perf.c
 
 ifeq ($(CFG_SECURE_PARTITION)-$(CFG_SPMC_TESTS),y-y)
 srcs += ffa_spmc_1000.c
@@ -147,6 +148,7 @@ CFLAGS += -I../../ta/supp_plugin/include
 CFLAGS += -I../../ta/bti_test/include
 CFLAGS += -I../../ta/subkey1/include
 CFLAGS += -I../../ta/subkey2/include
+CFLAGS += -I../../ta/crypto_perf/include
 
 TA_DIR ?= /lib/optee_armtz
 CFLAGS += -DTA_DIR=\"$(TA_DIR)\"
