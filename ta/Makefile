@@ -31,7 +31,8 @@ TA_DIRS := create_fail_test \
 	   storage_benchmark \
 	   sha_perf \
 	   aes_perf \
-	   socket
+	   socket \
+	   crypto_perf
 
 ifeq ($(CFG_SECURE_DATA_PATH),y)
 TA_DIRS += sdp_basic
@@ -58,7 +59,7 @@ endif
 all: ta
 
 .PHONY: ta
-ta: 
+ta:
 	$(q)$(foreach dir,$(TA_DIRS), $(MAKE) -C $(dir) O=$(out-dir)/ta/$(dir) &&) true
 
 # remove build directories including ta/<ta-name>/ directories.

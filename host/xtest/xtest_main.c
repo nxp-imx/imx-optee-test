@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016, Linaro Limited
  * Copyright (c) 2014, STMicroelectronics International N.V.
+ * Copyright 2018 NXP
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -72,6 +73,10 @@ void usage(char *program)
 	printf("applets:\n");
 	printf("\t--sha-perf [opts]  SHA performance testing tool (-h for usage)\n");
 	printf("\t--aes-perf [opts]  AES performance testing tool (-h for usage)\n");
+	printf("\t--crypto-perf      Crypto performance testing tool for OP-TEE\n");
+	printf("\t--crypto-perf -h   show usage of Crypto performance testing tool\n");
+	printf("\n");
+
 #ifdef CFG_SECSTOR_TA_MGMT_PTA
 	printf("\t--install-ta [directory or list of TAs]\n");
 	printf("\t                   Install TAs\n");
@@ -117,6 +122,8 @@ int main(int argc, char *argv[])
 		return sha_perf_runner_cmd_parser(argc-1, &argv[1]);
 	else if (argc > 1 && !strcmp(argv[1], "--aes-perf"))
 		return aes_perf_runner_cmd_parser(argc-1, &argv[1]);
+	else if (argc > 1 && !strcmp(argv[1], "--crypto-perf"))
+		return crypto_perf_runner_cmd_parser(argc-1, &argv[1]);
 #ifdef CFG_SECSTOR_TA_MGMT_PTA
 	else if (argc > 1 && !strcmp(argv[1], "--install-ta"))
 		return install_ta_runner_cmd_parser(argc - 1, argv + 1);
