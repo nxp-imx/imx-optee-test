@@ -81,7 +81,8 @@ srcs +=	adbg/src/adbg_case.c \
 	xtest_helpers.c \
 	xtest_main.c \
 	xtest_test.c \
-	xtest_uuid_helpers.c
+	xtest_uuid_helpers.c \
+	crypto_perf.c
 
 ifeq ($(CFG_SECSTOR_TA_MGMT_PTA),y)
 srcs += install_ta.c
@@ -134,6 +135,7 @@ CFLAGS += -I../../ta/socket/include
 CFLAGS += -I../../ta/sdp_basic/include
 CFLAGS += -I../../ta/tpm_log_test/include
 CFLAGS += -I../../ta/supp_plugin/include
+CFLAGS += -I../../ta/crypto_perf/include
 
 TA_DIR ?= /lib/optee_armtz
 CFLAGS += -DTA_DIR=\"$(TA_DIR)\"
