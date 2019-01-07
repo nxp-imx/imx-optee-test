@@ -722,7 +722,7 @@ static int asym_digest(int verbosity, uint32_t alg_id,
 	if (check_res(res,
 		"TEEC_InvokeCommand Asymmetric digest Process") != 0) {
 		if (res == TEE_ERROR_SHORT_BUFFER)
-			fprintf(stderr, "Expected output size %d\n",
+			fprintf(stderr, "Expected output size %zu\n",
 					op.params[1].memref.size);
 		ret = ERROR_TA_CMD_PROCESS;
 		goto asym_digest_exit;
@@ -745,7 +745,7 @@ static int asym_digest(int verbosity, uint32_t alg_id,
 	memcpy(in_shm->buffer, out_shm.buffer, outSize);
 	*inSize = outSize;
 
-	verbose("Asymmetric Digest Done size: %d\n", outSize);
+	verbose("Asymmetric Digest Done size: %zu\n", outSize);
 asym_digest_exit:
 	free_algo(&op);
 	TEEC_ReleaseSharedMemory(&out_shm);
@@ -1055,9 +1055,9 @@ static int run_test(struct test_param *test, FILE *log)
 	verbose("In Random: %d\n", test->in_random);
 	verbose("Keysize:   %d\n", test->keysize);
 	verbose("Loop:      %d\n", test->loop);
-	verbose("Size In:   %d\n", inSize);
+	verbose("Size In:   %zu\n", inSize);
 	if (!(test->in_place))
-		verbose("Size Out:  %d\n", outSize);
+		verbose("Size Out:  %zu\n", outSize);
 
 	OPEN_DATA(test->alg);
 
@@ -1091,7 +1091,7 @@ static int run_test(struct test_param *test, FILE *log)
 		verbose("In Random: %d\n", test->in_random);
 		verbose("Keysize:   %d\n", test->keysize);
 		verbose("Loop:      %d\n", test->loop);
-		verbose("Size In:   %d\n", outSize);
+		verbose("Size In:   %zu\n", outSize);
 
 		break;
 
@@ -1128,9 +1128,9 @@ static int run_test(struct test_param *test, FILE *log)
 		verbose("In Random: %d\n", test->in_random);
 		verbose("Keysize:   %d\n", test->keysize);
 		verbose("Loop:      %d\n", test->loop);
-		verbose("Size In:   %d\n", outSize);
+		verbose("Size In:   %zu\n", outSize);
 		if (!(test->in_place))
-			verbose("Size Out:  %d\n", inSize);
+			verbose("Size Out:  %zu\n", inSize);
 		break;
 	}
 
@@ -1458,7 +1458,7 @@ int crypto_perf_runner_cmd_parser(int argc, char *argv[])
 
 			if (len > sizeof(inputfile)) {
 				fprintf(stderr,
-			"Input file name too long, must be %d caracters max\n",
+			"Input file name too long, must be %zu caracters max\n",
 			sizeof(inputfile));
 				usage(argv[0]);
 				return 1;
@@ -1473,7 +1473,7 @@ int crypto_perf_runner_cmd_parser(int argc, char *argv[])
 			len = strlen(argv[idx + 1]);
 			if (len > sizeof(logfile)) {
 				fprintf(stderr,
-			"Input file name too long, must be %d caracters max\n",
+			"Input file name too long, must be %zu caracters max\n",
 			sizeof(logfile));
 				usage(argv[0]);
 				return 1;
