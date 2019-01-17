@@ -16,13 +16,13 @@
 static TEE_OperationHandle authenEnc_op;
 static TEE_OperationHandle authenDec_op;
 
-static uint8_t tag[64];
-static size_t  tag_len;
-static size_t  gen_tag_len;
-static uint8_t nonce[15];
-static size_t  nonce_len;
-static uint8_t aad[16];
-static size_t  aad_len;
+static uint8_t  tag[64];
+static size_t   tag_len;
+static uint32_t gen_tag_len;
+static uint8_t  nonce[15];
+static size_t   nonce_len;
+static uint8_t  aad[16];
+static size_t   aad_len;
 
 static void TA_FreeOp(uint8_t which)
 {
