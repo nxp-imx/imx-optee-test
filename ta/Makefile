@@ -32,6 +32,7 @@ TA_DIRS := create_fail_test \
 	   sha_perf \
 	   aes_perf \
 	   socket \
+	   crypt_nxp \
 	   crypto_perf
 
 ifeq ($(CFG_SECURE_DATA_PATH),y)

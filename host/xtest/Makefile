@@ -74,6 +74,7 @@ srcs +=	adbg/src/adbg_case.c \
 	xtest_helpers.c \
 	xtest_main.c \
 	xtest_test.c \
+	regression_nxp.c \
 	crypto_perf.c
 
 ifeq ($(CFG_SECSTOR_TA_MGMT_PTA),y)
@@ -118,6 +119,7 @@ CFLAGS += -I../../ta/sha_perf/include
 CFLAGS += -I../../ta/aes_perf/include
 CFLAGS += -I../../ta/socket/include
 CFLAGS += -I../../ta/sdp_basic/include
+CFLAGS += -I../../ta/crypt_nxp/include
 CFLAGS += -I../../ta/crypto_perf/include
 
 ifdef CFG_GP_PACKAGE_PATH

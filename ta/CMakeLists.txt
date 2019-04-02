@@ -17,4 +17,5 @@ target_include_directories(${PROJECT_NAME}
 	INTERFACE sims/include
 	INTERFACE socket/include
 	INTERFACE storage_benchmark/include
+	INTERFACE crypt_nxp/include
 )

@@ -57,6 +57,7 @@ set (SRC
 	xtest_helpers.c
 	xtest_main.c
 	xtest_test.c
+	regression_nxp.c
 )
 
 if (CFG_GP_SOCKETS)
