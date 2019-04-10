@@ -43,8 +43,8 @@ void TA_CloseSessionEntryPoint(void *pSessionContext)
 
 /* Called when a command is invoked */
 TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
-				      uint32_t nCommandID, uint32_t nParamTypes,
-				      TEE_Param pParams[4])
+				      uint32_t nCommandID, uint32_t nParamTypes __maybe_unused,
+				      TEE_Param pParams[4] __maybe_unused)
 {
 	(void)pSessionContext;
 

@@ -15,7 +15,8 @@
 
 const TEEC_UUID crypt_nxp_user_ta_uuid = TA_CRYPT_NXP_UUID;
 
-static TEEC_Result ta_crypt_cmd_rng(ADBG_Case_t *c, void *buf, size_t blen)
+static __maybe_unused TEEC_Result ta_crypt_cmd_rng(ADBG_Case_t *c,
+		void *buf, size_t blen)
 {
 	TEEC_Result res;
 	TEEC_Session session = { 0 };
