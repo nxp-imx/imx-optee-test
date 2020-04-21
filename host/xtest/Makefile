@@ -111,6 +111,8 @@ srcs  += gp_7000.c \
 	 gp_9000.c
 endif
 
+srcs += regression_nxp/crypto/cipher.c
+
 objs 	:= $(patsubst %.c,$(out-dir)/xtest/%.o, $(srcs))
 
 CFLAGS += -I./
@@ -192,6 +194,7 @@ xtest: $(objs)
 
 $(out-dir)/xtest/%.o: $(CURDIR)/%.c
 	$(q)mkdir -p $(out-dir)/xtest/adbg/src
+	$(q)mkdir -p $(out-dir)/xtest/regression_nxp/crypto
 	@echo '  CC      $<'
 	$(q)$(CC) $(CFLAGS) -c $< -o $@
 
@@ -257,3 +260,4 @@ clean:
 	$(q)$(foreach obj,$(objs), rm -f $(obj))
 	$(q)rm -f $(cleanfiles)
 	$(call rm-build-dirs,adbg/src adbg)
+	$(call rm-build-dirs,regression_nxp/crypto regression_nxp)
