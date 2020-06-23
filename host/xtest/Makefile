@@ -91,6 +91,9 @@ srcs += pkcs11_1000.c
 endif
 
 srcs += regression_nxp/crypto/cipher.c
+ifdef CFG_WITH_STATS
+srcs += regression_nxp/crypto/cipher_memleak.c
+endif
 
 objs 	:= $(patsubst %.c,$(out-dir)/xtest/%.o, $(srcs))
 
