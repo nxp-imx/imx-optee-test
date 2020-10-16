@@ -946,7 +946,7 @@ out:
 		close_ta_memstats(&ta_stat_sess, &stats);
 }
 
-ADBG_CASE_DEFINE(regression, nxp_004, nxp_memleak_004,
+ADBG_CASE_DEFINE(regression_nxp, 0004, nxp_memleak_004,
 		 "Test TEE Cipher operation memory leak");
 
 static void nxp_memleak_005(ADBG_Case_t *c)
@@ -990,5 +990,5 @@ out:
 		close_ta_memstats(&ta_stat_sess, &stats);
 }
 
-ADBG_CASE_DEFINE(regression, nxp_005, nxp_memleak_005,
+ADBG_CASE_DEFINE(regression_nxp, 0005, nxp_memleak_005,
 		 "Test TEE Cipher MAC operation memory leak");
