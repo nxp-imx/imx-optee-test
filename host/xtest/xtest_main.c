@@ -36,6 +36,9 @@ ADBG_SUITE_DEFINE(gp);
 ADBG_SUITE_DEFINE(pkcs11);
 #endif
 ADBG_SUITE_DEFINE(regression);
+#ifdef CFG_REGRESSION_NXP
+ADBG_SUITE_DEFINE(regression_nxp);
+#endif
 
 char *xtest_tee_name = NULL;
 unsigned int level = 0;
@@ -53,7 +56,14 @@ static const char glevel[] = "0";
 #define PKCS11_SUITE	""
 #endif
 
-static char gsuitename[] = "regression" GP_SUITE PKCS11_SUITE;
+#ifdef CFG_REGRESSION_NXP
+#define NXP_SUITE	"+regression_nxp"
+#else
+#define NXP_SUITE	""
+#endif
+
+
+static char gsuitename[] = "regression" GP_SUITE PKCS11_SUITE NXP_SUITE;
 
 void usage(char *program);
 
@@ -232,6 +242,10 @@ next:
 #ifdef CFG_PKCS11_TA
 		else if (!strcmp(token, "pkcs11"))
 			ret = Do_ADBG_AppendToSuite(&all, &ADBG_Suite_pkcs11);
+#endif
+#ifdef CFG_REGRESSION_NXP
+		else if (!strcmp(token, "regression_nxp"))
+			ret = Do_ADBG_AppendToSuite(&all, &ADBG_Suite_regression_nxp);
 #endif
 		else {
 			fprintf(stderr, "Unkown test suite: %s\n", token);

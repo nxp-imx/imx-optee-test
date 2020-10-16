@@ -21,6 +21,9 @@ ADBG_SUITE_DECLARE(gp);
 ADBG_SUITE_DECLARE(pkcs11);
 #endif
 ADBG_SUITE_DECLARE(regression);
+#ifdef CFG_REGRESSION_NXP
+ADBG_SUITE_DECLARE(regression_nxp);
+#endif
 
 /* TEEC_Result */
 ADBG_ENUM_TABLE_DECLARE(TEEC_Result);

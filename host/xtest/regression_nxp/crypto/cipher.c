@@ -316,7 +316,7 @@ out_free:
 		free(de_msg);
 }
 
-ADBG_CASE_DEFINE(regression, nxp_001, nxp_crypto_001,
+ADBG_CASE_DEFINE(regression_nxp, 0001, nxp_crypto_001,
 		 "Test TEE cipher AES CTR operation byte incremental in/out");
 
 static void nxp_crypto_002(ADBG_Case_t *c)
@@ -404,7 +404,7 @@ out_free:
 		free(de_msg);
 }
 
-ADBG_CASE_DEFINE(regression, nxp_002, nxp_crypto_002,
+ADBG_CASE_DEFINE(regression_nxp, 0002, nxp_crypto_002,
 		 "Test TEE cipher AES CTR decrypt byte per byte");
 
 static void nxp_crypto_003(ADBG_Case_t *c)
@@ -549,5 +549,5 @@ out_free:
 		free(dec_input);
 }
 
-ADBG_CASE_DEFINE(regression, nxp_003, nxp_crypto_003,
+ADBG_CASE_DEFINE(regression_nxp, 0003, nxp_crypto_003,
 		 "Test TEE cipher operations with big buffers");
