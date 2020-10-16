@@ -53,6 +53,9 @@ endif
 endif #OPTEE_OPENSSL_EXPORT
 endif #require OpenSSL
 
+# Enable CA regression NXP
+CFG_REGRESSION_NXP ?= y
+
 srcs := regression_1000.c
 
 ifeq ($(CFG_GP_SOCKETS),y)
