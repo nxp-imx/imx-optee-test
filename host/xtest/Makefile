@@ -111,9 +111,12 @@ srcs  += gp_7000.c \
 	 gp_9000.c
 endif
 
+ifeq ($(CFG_REGRESSION_NXP),y)
+CFLAGS += -DCFG_REGRESSION_NXP
 srcs += regression_nxp/crypto/cipher.c
-ifdef CFG_WITH_STATS
+ifeq ($(CFG_WITH_STATS),y)
 srcs += regression_nxp/crypto/cipher_memleak.c
+endif
 endif
 
 objs 	:= $(patsubst %.c,$(out-dir)/xtest/%.o, $(srcs))
@@ -197,7 +200,9 @@ xtest: $(objs)
 
 $(out-dir)/xtest/%.o: $(CURDIR)/%.c
 	$(q)mkdir -p $(out-dir)/xtest/adbg/src
+ifdef CFG_REGRESSION_NXP
 	$(q)mkdir -p $(out-dir)/xtest/regression_nxp/crypto
+endif
 	@echo '  CC      $<'
 	$(q)$(CC) $(CFLAGS) -c $< -o $@
 
@@ -263,4 +268,6 @@ clean:
 	$(q)$(foreach obj,$(objs), rm -f $(obj))
 	$(q)rm -f $(cleanfiles)
 	$(call rm-build-dirs,adbg/src adbg)
+ifdef CFG_REGRESSION_NXP
 	$(call rm-build-dirs,regression_nxp/crypto regression_nxp)
+endif

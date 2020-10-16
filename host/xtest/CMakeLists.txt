@@ -86,6 +86,13 @@ if (CFG_PKCS11_TA)
 	list (APPEND SRC pkcs11_1000.c)
 endif()
 
+if (CFG_REGRESSION_NXP)
+	list (APPEND SRC regression_nxp/crypto/cipher.c)
+if (CFG_WITH_STATS)
+	list (APPEND SRC regression_nxp/crypto/cipher_memleak.c)
+endif()
+endif()
+
 ################################################################################
 # Built binary
 ################################################################################
