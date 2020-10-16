@@ -77,6 +77,13 @@ LOCAL_CFLAGS += -DCFG_PKCS11_TA
 LOCAL_SHARED_LIBRARIES += libckteec
 endif
 
+ifeq ($(CFG_REGRESSION_NXP),y)
+srcs += regression_nxp/crypto/cipher.c
+ifeq ($(CFG_WITH_STATS),y)
+srcs += regression_nxp/crypto/cipher_memleak.c
+endif
+endif
+
 define my-embed-file
 $(TARGET_OUT_HEADERS)/$(1).h: $(LOCAL_PATH)/$(2)
 	@echo '  GEN     $$@'
