@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright 2018 NXP
+ * Copyright 2018-2021 NXP
  */
 
 #ifndef __TA_CRYPTO_PERF_H__
@@ -31,7 +31,7 @@
 uint32_t get_nb_algo(void);
 uint32_t get_size_name_alg_list(void);
 void     copy_name_alg_list(char *buffer);
-uint32_t get_alg_id(char *name);
+uint32_t get_alg_id(char *name, size_t size);
 
 
 /* Cipher Functions */

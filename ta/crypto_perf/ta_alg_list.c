@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-2-Clause
 /*
- * Copyright 2018 NXP
+ * Copyright 2018-2021 NXP
  */
 
 #include <string.h>
@@ -171,12 +171,12 @@ void copy_name_alg_list(char *buffer)
 	}
 }
 
-uint32_t get_alg_id(char *name)
+uint32_t get_alg_id(char *name, size_t size)
 {
 	uint32_t idx;
 
 	for (idx = 0; idx < get_nb_algo(); idx++) {
-		if (!(strcmp(name_alg_list[idx], name)))
+		if (!(strncmp(name_alg_list[idx], name, size)))
 			return id_alg_list[idx];
 	}
 
