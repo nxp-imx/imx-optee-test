@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-2-Clause
 /*
- * Copyright 2018 NXP
+ * Copyright 2018-2021 NXP
  */
 
 #include <stdio.h>
@@ -100,7 +100,7 @@ static TEE_Result TA_PrepareAlgo(uint32_t ParamTypes, TEE_Param Params[4])
 	if (Params[0].memref.buffer == NULL)
 		return TEE_ERROR_BAD_PARAMETERS;
 
-	alg_id = get_alg_id(Params[0].memref.buffer);
+	alg_id = get_alg_id(Params[0].memref.buffer, Params[0].memref.size);
 
 	Params[2].value.a = alg_id;
 
