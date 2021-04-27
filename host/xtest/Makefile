@@ -106,6 +106,7 @@ srcs += regression_nxp/peripherals/i2c.c
 ifeq ($(CFG_WITH_STATS),y)
 srcs += regression_nxp/crypto/cipher_memleak.c
 endif
+srcs += regression_nxp/dek_blob/dek_blob.c
 endif
 
 objs 	:= $(patsubst %.c,$(out-dir)/xtest/%.o, $(srcs))
@@ -179,6 +180,7 @@ $(out-dir)/xtest/%.o: $(CURDIR)/%.c
 ifdef CFG_REGRESSION_NXP
 	$(q)mkdir -p $(out-dir)/xtest/regression_nxp/crypto
 	$(q)mkdir -p $(out-dir)/xtest/regression_nxp/peripherals
+	$(q)mkdir -p $(out-dir)/xtest/regression_nxp/dek_blob
 endif
 	@echo '  CC      $<'
 	$(q)$(CC) $(CFLAGS) -c $< -o $@
@@ -246,5 +248,6 @@ clean:
 	$(q)rm -f $(cleanfiles)
 	$(call rm-build-dirs,adbg/src adbg)
 ifdef CFG_REGRESSION_NXP
+	$(call rm-build-dirs,regression_nxp/dek_blob)
 	$(call rm-build-dirs,regression_nxp/crypto regression_nxp/peripherals regression_nxp)
 endif
