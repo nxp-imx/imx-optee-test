@@ -33,6 +33,8 @@ define cc-bits
 $(if $(filter arm, $(1)),32,$(if $(filter aarch64, $(1)),64,unknown-arch))
 endef
 
+CFG_REGRESSION_NXP ?= y
+
 # OpenSSL is used by:
 # - GP tests series 8500
 # - Mbed TLS test 8103
