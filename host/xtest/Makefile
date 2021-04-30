@@ -34,6 +34,7 @@ $(if $(filter arm, $(1)),32,$(if $(filter aarch64, $(1)),64,unknown-arch))
 endef
 
 CFG_REGRESSION_NXP ?= y
+CFG_PKCS11_TA ?= y
 
 # OpenSSL is used by:
 # - GP tests series 8500
