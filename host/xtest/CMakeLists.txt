@@ -109,6 +109,7 @@ endif()
 
 if (CFG_REGRESSION_NXP)
 	list (APPEND SRC regression_nxp/crypto/cipher.c)
+	list (APPEND SRC regression_nxp/peripherals/i2c.c)
 if (CFG_WITH_STATS)
 	list (APPEND SRC regression_nxp/crypto/cipher_memleak.c)
 endif()
