@@ -118,6 +118,7 @@ if (CFG_CRYPTO_SE05X)
 endif()
 if (CFG_REGRESSION_NXP)
 	list (APPEND SRC regression_nxp/crypto/cipher.c)
+	list (APPEND SRC regression_nxp/peripherals/i2c.c)
 endif()
 
 ################################################################################
