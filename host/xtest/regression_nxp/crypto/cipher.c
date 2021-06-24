@@ -407,6 +407,8 @@ out_free:
 ADBG_CASE_DEFINE(regression_nxp, 0002, nxp_crypto_002,
 		 "Test TEE cipher AES CTR decrypt byte per byte");
 
+#define BIG_BUFFER_SIZE 133120
+
 static void nxp_crypto_003(ADBG_Case_t *c)
 {
 	TEEC_Result res = TEE_ERROR_GENERIC;
@@ -421,9 +423,12 @@ static void nxp_crypto_003(ADBG_Case_t *c)
 	uint8_t *big_input = NULL;
 	uint8_t *big_output = NULL;
 	uint8_t *dec_input = NULL;
-	size_t len_data_ref = 0;
+	size_t len_data_ref = ARRAY_SIZE(ciph_data_ref);
 
-#define BIG_BUFFER_SIZE 133120
+	unsigned int i = 0;
+	unsigned int nb_blocks = BIG_BUFFER_SIZE / len_data_ref;
+	size_t data_left = BIG_BUFFER_SIZE % len_data_ref;
+	size_t offset = 0;
 
 	big_input = malloc(BIG_BUFFER_SIZE);
 	if (!ADBG_EXPECT_NOT_NULL(c, big_input))
@@ -444,11 +449,13 @@ static void nxp_crypto_003(ADBG_Case_t *c)
 	Do_ADBG_Log("Allocated big Decrypt buffer @%p - %d bytes", dec_input,
 		    BIG_BUFFER_SIZE);
 
-	len_data_ref = ARRAY_SIZE(ciph_data_ref);
-
-	for (size_t offset = 0; offset < BIG_BUFFER_SIZE;
-	     offset += len_data_ref)
+	/* Were copying the data: first the full blocks then the remainder */
+	for (i = 0; i < nb_blocks; i++){
 		memcpy(big_input + offset, ciph_data_ref, len_data_ref);
+		offset += len_data_ref;
+	}
+	if (data_left)
+		memcpy(big_input + offset, ciph_data_ref, data_left);
 
 	res = xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
 				      &ret_orig);
