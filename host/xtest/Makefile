@@ -112,6 +112,7 @@ srcs += regression_nxp/crypto/cipher_memleak.c
 endif
 srcs += regression_nxp/dek_blob/dek_blob.c
 srcs += regression_nxp/ocotp/ocotp.c
+srcs += regression_nxp/digprog/digprog.c
 endif
 
 objs 	:= $(patsubst %.c,$(out-dir)/xtest/%.o, $(srcs))
@@ -193,6 +194,7 @@ ifdef CFG_REGRESSION_NXP
 	$(q)mkdir -p $(out-dir)/xtest/regression_nxp/peripherals
 	$(q)mkdir -p $(out-dir)/xtest/regression_nxp/dek_blob
 	$(q)mkdir -p $(out-dir)/xtest/regression_nxp/ocotp
+	$(q)mkdir -p $(out-dir)/xtest/regression_nxp/digprog
 endif
 	@echo '  CC      $<'
 	$(q)$(CC) $(CFLAGS) -c $< -o $@
