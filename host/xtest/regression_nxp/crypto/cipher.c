@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-2-Clause
 /*
- * Copyright 2020 NXP
+ * Copyright 2021 NXP
  */
 
 #include <assert.h>
@@ -558,3 +558,81 @@ out_free:
 
 ADBG_CASE_DEFINE(regression_nxp, 0003, nxp_crypto_003,
 		 "Test TEE cipher operations with big buffers");
+
+static void nxp_crypto_004(ADBG_Case_t *c)
+{
+	TEEC_Result res = TEE_ERROR_GENERIC;
+	TEEC_Session session = {};
+	TEE_OperationHandle op = TEE_HANDLE_NULL;
+	TEE_ObjectHandle key_handle = TEE_HANDLE_NULL;
+	TEE_Attribute key_attr = {};
+	uint32_t ret_orig = 0;
+
+	size_t out_size = 0;
+	uint8_t *de_msg = NULL;
+	uint32_t key_size = 0;
+	size_t msg_size = ARRAY_SIZE(ciph_data_ref3);
+
+	res = xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
+				      &ret_orig);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return;
+
+	de_msg = malloc(msg_size);
+	if (!ADBG_EXPECT_NOT_NULL(c, de_msg))
+		goto out;
+	memcpy(de_msg, ciph_data_ref3, msg_size);
+
+	key_attr.attributeID = TEE_ATTR_SECRET_VALUE;
+	key_attr.content.ref.buffer = (void *)ciph_data_key3;
+	key_attr.content.ref.length = ARRAY_SIZE(ciph_data_key3);
+
+	key_size = key_attr.content.ref.length * 8;
+
+	res = ta_crypt_cmd_allocate_transient_object(c, &session, TEE_TYPE_AES,
+						     key_size, &key_handle);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	res = ta_crypt_cmd_populate_transient_object(c, &session, key_handle,
+						     &key_attr, 1);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	res = ta_crypt_cmd_allocate_operation(c, &session, &op, TEE_ALG_AES_CTR,
+					      TEE_MODE_DECRYPT, key_size);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	res = ta_crypt_cmd_set_operation_key(c, &session, op, key_handle);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	res = ta_crypt_cipher_init(c, &session, op, ciph_data_iv3,
+				   ARRAY_SIZE(ciph_data_iv3));
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	out_size = msg_size;
+	res = ta_crypt_cipher_update(c, &session, op, de_msg, msg_size, de_msg,
+				     &out_size);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	res = ta_crypt_cmd_free_operation(c, &session, op);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	/* Compare original message with decrypted message */
+	(void)ADBG_EXPECT_BUFFER(c, ciph_data_out3, msg_size, de_msg, out_size);
+
+	res = ta_crypt_cmd_free_transient_object(c, &session, key_handle);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+out:
+	TEEC_CloseSession(&session);
+	free(de_msg);
+}
+ADBG_CASE_DEFINE(regression_nxp, 0004, nxp_crypto_004,
+		 "Test TEE AES CTR cipher in place operation");
