@@ -4,21 +4,29 @@
  */
 
 #include <stdio.h>
-#include <trace.h>
 #include <string.h>
-
-#include <tee_ta_api.h>
-#include <user_ta_header_defines.h>
 #include <ta_crypto_perf.h>
+#include <tee_ta_api.h>
+#include <test_vectors_dsa.h>
+#include <trace.h>
+#include <user_ta_header_defines.h>
+#include <util.h>
 
 #define SIGN_ALGO	(1 << 0)
 #define VERIFY_ALGO	(1 << 1)
 
+#ifndef ARRAY
+#define ARRAY(a)            a, ARRAY_SIZE(a)
+#endif
+
 static TEE_OperationHandle asymdigestSign_op;
 static TEE_OperationHandle asymdigestVerif_op;
 static uint8_t *prime;
+static size_t prime_len;
 static uint8_t *subprime;
+static size_t subprime_len;
 static uint8_t *base;
+static size_t base_len;
 
 static void TA_FreeOp(uint8_t which)
 {
@@ -54,10 +62,10 @@ TEE_Result TA_AsymDigestPrepareAlgo(uint32_t algo, TEE_Param params[4])
 	TEE_ObjectType	 objType;
 	TEE_Attribute    attrs[5];
 	uint8_t          nb_attrs = 0;
-	uint32_t         q_size   = 0;
 
 	uint32_t keysize;
 	uint32_t op_keysize;
+	uint8_t n = 0;
 
 	keysize = params[1].value.a;
 
@@ -89,36 +97,66 @@ TEE_Result TA_AsymDigestPrepareAlgo(uint32_t algo, TEE_Param params[4])
 		if (keysize % 64)
 			return TEE_ERROR_BAD_PARAMETERS;
 
+#define CPERF_DSA_TEST_DATA(vect) \
+	ARRAY(vect ## _p), \
+	ARRAY(vect ## _g), \
+	ARRAY(vect ## _q)
+		static const struct {
+			uint32_t key_size_bits;
+			const uint8_t *prime;
+			size_t prime_len;
+			const uint8_t *base;
+			size_t base_len;
+			const uint8_t *sub_prime;
+			size_t sub_prime_len;
+		} key_types[] = {
+			{ 512, CPERF_DSA_TEST_DATA(keygen_dsa512) },
+			{ 576, CPERF_DSA_TEST_DATA(keygen_dsa576) },
+			{ 640, CPERF_DSA_TEST_DATA(keygen_dsa640) },
+			{ 704, CPERF_DSA_TEST_DATA(keygen_dsa704) },
+			{ 768, CPERF_DSA_TEST_DATA(keygen_dsa768) },
+			{ 832, CPERF_DSA_TEST_DATA(keygen_dsa832) },
+			{ 896, CPERF_DSA_TEST_DATA(keygen_dsa896) },
+			{ 960, CPERF_DSA_TEST_DATA(keygen_dsa960) },
+			{ 1024, CPERF_DSA_TEST_DATA(keygen_dsa1024) },
+			{ 2048, CPERF_DSA_TEST_DATA(keygen_dsa2048) },
+			{ 3072, CPERF_DSA_TEST_DATA(keygen_dsa3072) },
+		};
 
-		if (keysize <= 1024)
-			q_size = 20;
-		else if (keysize <= 2048)
-			q_size = 32;
-		else if (keysize <= 3072)
-			q_size = 35;
-		else
-			q_size = 40;
+		for (n = 0; n < ARRAY_SIZE(key_types); n++) {
+			if (key_types[n].key_size_bits != keysize)
+				continue;
 
-		prime    = TEE_Malloc((keysize / 8), 0);
-		subprime = TEE_Malloc(q_size, 0);
-		base     = TEE_Malloc((keysize / 8), 0);
+			prime_len = key_types[n].prime_len;
+			subprime_len = key_types[n].sub_prime_len;
+			base_len = key_types[n].base_len;
 
-		if ((!prime) || (!subprime) || (!base)) {
-			res = TEE_ERROR_OUT_OF_MEMORY;
-			goto PrepareExit_Error;
+			prime    = TEE_Malloc(key_types[n].prime_len, 0);
+			subprime = TEE_Malloc(key_types[n].sub_prime_len, 0);
+			base     = TEE_Malloc(key_types[n].base_len, 0);
+
+			if ((!prime) || (!subprime) || (!base)) {
+				res = TEE_ERROR_OUT_OF_MEMORY;
+				goto PrepareExit_Error;
+			}
+
+			memcpy(prime, key_types[n].prime, key_types[n].prime_len);
+			memcpy(subprime, key_types[n].sub_prime, key_types[n].sub_prime_len);
+			memcpy(base, key_types[n].base, key_types[n].base_len);
+			break;
 		}
 
 		attrs[0].attributeID = TEE_ATTR_DSA_PRIME;
 		attrs[0].content.ref.buffer = (void *)prime;
-		attrs[0].content.ref.length = keysize / 8;
+		attrs[0].content.ref.length = prime_len;
 
 		attrs[1].attributeID = TEE_ATTR_DSA_SUBPRIME;
 		attrs[1].content.ref.buffer = (void *)subprime;
-		attrs[1].content.ref.length = q_size;
+		attrs[1].content.ref.length = subprime_len;
 
 		attrs[2].attributeID = TEE_ATTR_DSA_BASE;
 		attrs[2].content.ref.buffer = (void *)base;
-		attrs[2].content.ref.length = keysize / 8;
+		attrs[2].content.ref.length = base_len;
 
 		nb_attrs = 3;
 
