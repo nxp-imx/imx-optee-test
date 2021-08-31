@@ -14,8 +14,6 @@ static TEE_OperationHandle deriveKey_op;
 static uint8_t *prime;
 static uint8_t *base;
 static uint8_t *public_key;
-static uint8_t *public_key2;
-static uint8_t *private_key;
 static uint8_t *public_x_2;
 static uint8_t *public_y_2;
 
@@ -39,10 +37,6 @@ static void TA_FreeOp(void)
 		TEE_Free(base);
 	if (public_key)
 		TEE_Free(public_key);
-	if (public_key2)
-		TEE_Free(public_key2);
-	if (private_key)
-		TEE_Free(private_key);
 	if (public_x_2)
 		TEE_Free(public_x_2);
 	if (public_y_2)
@@ -51,8 +45,6 @@ static void TA_FreeOp(void)
 	prime       = NULL;
 	base        = NULL;
 	public_key  = NULL;
-	public_key2 = NULL;
-	private_key = NULL;
 	public_x_2  = NULL;
 	public_y_2  = NULL;
 
@@ -94,18 +86,15 @@ TEE_Result TA_KeyDerivePrepareAlgo(uint32_t algo, TEE_Param params[4])
 		prime       = TEE_Malloc(keysize / 8, 0);
 		base        = TEE_Malloc(keysize / 64, 0);
 		public_key  = TEE_Malloc(keysize / 8, 0);
-		public_key2 = TEE_Malloc(keysize / 8, 0);
-		private_key = TEE_Malloc(keysize / 8, 0);
 
-		if ((!prime) || (!base) || (!public_key) || (!private_key) ||
-			(!public_key2)) {
+		if ((!prime) || (!base) || (!public_key)) {
 			res = TEE_ERROR_OUT_OF_MEMORY;
 			goto PrepareExit_Error;
 		}
 
 		TEE_GenerateRandom(prime, keysize / 8);
 		TEE_GenerateRandom(base, keysize / 64);
-		TEE_GenerateRandom(public_key2, keysize / 8);
+		TEE_GenerateRandom(public_key, keysize / 8);
 
 		/*
 		 * WARNING if prime is even, PKHA Exponentiation
@@ -122,15 +111,7 @@ TEE_Result TA_KeyDerivePrepareAlgo(uint32_t algo, TEE_Param params[4])
 		attrs[1].content.ref.buffer = (void *)base;
 		attrs[1].content.ref.length = keysize / 64;
 
-		attrs[2].attributeID = TEE_ATTR_DH_PUBLIC_VALUE;
-		attrs[2].content.ref.buffer = (void *)public_key;
-		attrs[2].content.ref.length = keysize / 8;
-
-		attrs[3].attributeID = TEE_ATTR_DH_PRIVATE_VALUE;
-		attrs[3].content.ref.buffer = (void *)private_key;
-		attrs[3].content.ref.length = keysize / 8;
-
-		nb_attrs = 4;
+		nb_attrs = 2;
 
 		break;
 
@@ -238,7 +219,7 @@ TEE_Result TA_KeyDeriveProcessAlgo(uint32_t algo, TEE_Param params[4])
 
 	if (algo == TEE_ALG_DH_DERIVE_SHARED_SECRET) {
 		attrs[0].attributeID = TEE_ATTR_DH_PUBLIC_VALUE;
-		attrs[0].content.ref.buffer = (void *)public_key2;
+		attrs[0].content.ref.buffer = (void *)public_key;
 		attrs[0].content.ref.length = inSize;
 		nb_attrs = 1;
 	} else {
