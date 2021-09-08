@@ -874,31 +874,6 @@ static int run_test(struct test_param *test, FILE *log)
 	if (TEE_ALG_GET_CLASS(alg_id) == TEE_OPERATION_KEY_DERIVATION)
 		inSize = test->keysize / 8;
 
-	/* Allocate shared memory */
-	in_shm.flags  = TEEC_MEM_INPUT;
-	in_shm.buffer = NULL;
-	in_shm.size   = inSize;
-
-	if (test->in_place) {
-		/* Use same buffer for input and output */
-		in_shm.flags |= TEEC_MEM_OUTPUT;
-	}
-
-	res = TEEC_AllocateSharedMemory(&ctx, &in_shm);
-	if (check_res(res, "TEEC_AllocateSharedMemory in_shm") != 0) {
-		ret = ERROR_ALLOCATE_SHM;
-		goto run_test_exit;
-	}
-
-	if (test->in_random) {
-		ret = read_random(in_shm.buffer, in_shm.size);
-		if (ret) {
-			ret = ERROR_READ_RANDOM_FILE;
-			goto run_test_exit;
-		}
-	} else {
-		memset(in_shm.buffer, 0, in_shm.size);
-	}
 
 	switch (TEE_ALG_GET_CLASS(alg_id)) {
 	case TEE_OPERATION_CIPHER:
@@ -987,6 +962,32 @@ static int run_test(struct test_param *test, FILE *log)
 
 	default:
 		break;
+	}
+
+	/* Allocate shared memory */
+	in_shm.flags  = TEEC_MEM_INPUT;
+	in_shm.buffer = NULL;
+	in_shm.size   = MAX(inSize, outSize);
+
+	if (test->in_place) {
+		/* Use same buffer for input and output */
+		in_shm.flags |= TEEC_MEM_OUTPUT;
+	}
+
+	res = TEEC_AllocateSharedMemory(&ctx, &in_shm);
+	if (check_res(res, "TEEC_AllocateSharedMemory in_shm") != 0) {
+		ret = ERROR_ALLOCATE_SHM;
+		goto run_test_exit;
+	}
+
+	if (test->in_random) {
+		ret = read_random(in_shm.buffer, in_shm.size);
+		if (ret) {
+			ret = ERROR_READ_RANDOM_FILE;
+			goto run_test_exit;
+		}
+	} else {
+		memset(in_shm.buffer, 0, in_shm.size);
 	}
 
 	out_shm.flags  = TEEC_MEM_INPUT | TEEC_MEM_OUTPUT;
