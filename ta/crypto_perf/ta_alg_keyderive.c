@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-2-Clause
 /*
- * Copyright 2018 NXP
+ * Copyright 2018, 2021 NXP
  */
 
 #include <stdio.h>
@@ -16,8 +16,6 @@ static uint8_t *base;
 static uint8_t *public_key;
 static uint8_t *public_key2;
 static uint8_t *private_key;
-static uint8_t *public_x;
-static uint8_t *public_y;
 static uint8_t *public_x_2;
 static uint8_t *public_y_2;
 
@@ -45,10 +43,6 @@ static void TA_FreeOp(void)
 		TEE_Free(public_key2);
 	if (private_key)
 		TEE_Free(private_key);
-	if (public_x)
-		TEE_Free(public_x);
-	if (public_y)
-		TEE_Free(public_y);
 	if (public_x_2)
 		TEE_Free(public_x_2);
 	if (public_y_2)
@@ -59,8 +53,6 @@ static void TA_FreeOp(void)
 	public_key  = NULL;
 	public_key2 = NULL;
 	private_key = NULL;
-	public_x    = NULL;
-	public_y    = NULL;
 	public_x_2  = NULL;
 	public_y_2  = NULL;
 
@@ -146,42 +138,38 @@ TEE_Result TA_KeyDerivePrepareAlgo(uint32_t algo, TEE_Param params[4])
 		if ((keysize < 192) || (keysize > 528))
 			return TEE_ERROR_BAD_PARAMETERS;
 
-		attrs[3].attributeID = TEE_ATTR_ECC_CURVE;
-		attrs[3].content.value.b = 0;
+		attrs[0].attributeID = TEE_ATTR_ECC_CURVE;
+		attrs[0].content.value.b = sizeof(int);
 
 		switch (algo) {
 		case TEE_ALG_ECDH_P192:
-			attrs[3].content.value.a = TEE_ECC_CURVE_NIST_P192;
+			attrs[0].content.value.a = TEE_ECC_CURVE_NIST_P192;
 			break;
 
 		case TEE_ALG_ECDH_P224:
-			attrs[3].content.value.a =  TEE_ECC_CURVE_NIST_P224;
+			attrs[0].content.value.a =  TEE_ECC_CURVE_NIST_P224;
 			break;
 
 		case TEE_ALG_ECDH_P256:
-			attrs[3].content.value.a =  TEE_ECC_CURVE_NIST_P256;
+			attrs[0].content.value.a =  TEE_ECC_CURVE_NIST_P256;
 			break;
 
 		case TEE_ALG_ECDH_P384:
-			attrs[3].content.value.a = TEE_ECC_CURVE_NIST_P384;
+			attrs[0].content.value.a = TEE_ECC_CURVE_NIST_P384;
 			break;
 
 		case TEE_ALG_ECDH_P521:
-			attrs[3].content.value.a = TEE_ECC_CURVE_NIST_P521;
-			op_keysize = 521;
+			attrs[0].content.value.a = TEE_ECC_CURVE_NIST_P521;
+			keysize = 528;
 			break;
 
 		default:
 			return TEE_ERROR_BAD_PARAMETERS;
 		}
-
-		private_key = TEE_Malloc(keysize / 8, 0);
-		public_x    = TEE_Malloc(keysize / 8, 0);
-		public_y    = TEE_Malloc(keysize / 8, 0);
 		public_x_2  = TEE_Malloc(keysize / 8, 0);
 		public_y_2  = TEE_Malloc(keysize / 8, 0);
 
-		if ((!private_key) || (!public_x) || (!public_y)) {
+		if ((!public_x_2) || (!public_y_2)) {
 			res = TEE_ERROR_OUT_OF_MEMORY;
 			goto PrepareExit_Error;
 		}
@@ -189,19 +177,7 @@ TEE_Result TA_KeyDerivePrepareAlgo(uint32_t algo, TEE_Param params[4])
 		TEE_GenerateRandom(public_x_2, keysize / 8);
 		TEE_GenerateRandom(public_y_2, keysize / 8);
 
-		attrs[0].attributeID = TEE_ATTR_ECC_PRIVATE_VALUE;
-		attrs[0].content.ref.buffer = (void *)private_key;
-		attrs[0].content.ref.length = keysize / 8;
-
-		attrs[1].attributeID = TEE_ATTR_ECC_PUBLIC_VALUE_X;
-		attrs[1].content.ref.buffer = (void *)public_x;
-		attrs[1].content.ref.length = keysize / 8;
-
-		attrs[2].attributeID = TEE_ATTR_ECC_PUBLIC_VALUE_Y;
-		attrs[2].content.ref.buffer = (void *)public_y;
-		attrs[2].content.ref.length = keysize / 8;
-
-		nb_attrs = 4;
+		nb_attrs = 1;
 		break;
 
 	default:
