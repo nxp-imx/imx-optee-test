@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-2-Clause
 /*
- * Copyright 2018 NXP
+ * Copyright 2018, 2021 NXP
  */
 
 #include <stdio.h>
@@ -19,9 +19,6 @@ static TEE_OperationHandle asymdigestVerif_op;
 static uint8_t *prime;
 static uint8_t *subprime;
 static uint8_t *base;
-static uint8_t *private;
-static uint8_t *public_x;
-static uint8_t *public_y;
 
 static void TA_FreeOp(uint8_t which)
 {
@@ -40,19 +37,10 @@ static void TA_FreeOp(uint8_t which)
 		TEE_Free(subprime);
 	if (prime)
 		TEE_Free(prime);
-	if (private)
-		TEE_Free(private);
-	if (public_x)
-		TEE_Free(public_x);
-	if (public_y)
-		TEE_Free(public_y);
 
 	base     = NULL;
 	subprime = NULL;
 	prime    = NULL;
-	private  = NULL;
-	public_x = NULL;
-	public_y = NULL;
 }
 
 TEE_Result TA_AsymDigestPrepareAlgo(uint32_t algo, TEE_Param params[4])
@@ -140,28 +128,28 @@ TEE_Result TA_AsymDigestPrepareAlgo(uint32_t algo, TEE_Param params[4])
 		if ((keysize < 192) || (keysize > 521))
 			return TEE_ERROR_BAD_PARAMETERS;
 
-		attrs[3].attributeID = TEE_ATTR_ECC_CURVE;
-		attrs[3].content.value.b = 0;
+		attrs[0].attributeID = TEE_ATTR_ECC_CURVE;
+		attrs[0].content.value.b = sizeof(int);
 
 		switch (algo) {
 		case TEE_ALG_ECDSA_P192:
-			attrs[3].content.value.a = TEE_ECC_CURVE_NIST_P192;
+			attrs[0].content.value.a = TEE_ECC_CURVE_NIST_P192;
 			break;
 
 		case TEE_ALG_ECDSA_P224:
-			attrs[3].content.value.a =  TEE_ECC_CURVE_NIST_P224;
+			attrs[0].content.value.a =  TEE_ECC_CURVE_NIST_P224;
 			break;
 
 		case TEE_ALG_ECDSA_P256:
-			attrs[3].content.value.a =  TEE_ECC_CURVE_NIST_P256;
+			attrs[0].content.value.a =  TEE_ECC_CURVE_NIST_P256;
 			break;
 
 		case TEE_ALG_ECDSA_P384:
-			attrs[3].content.value.a = TEE_ECC_CURVE_NIST_P384;
+			attrs[0].content.value.a = TEE_ECC_CURVE_NIST_P384;
 			break;
 
 		case TEE_ALG_ECDSA_P521:
-			attrs[3].content.value.a = TEE_ECC_CURVE_NIST_P521;
+			attrs[0].content.value.a = TEE_ECC_CURVE_NIST_P521;
 			keysize = 528;
 			break;
 
@@ -169,28 +157,7 @@ TEE_Result TA_AsymDigestPrepareAlgo(uint32_t algo, TEE_Param params[4])
 			return TEE_ERROR_BAD_PARAMETERS;
 		}
 
-		private  = TEE_Malloc(keysize / 8, 0);
-		public_x = TEE_Malloc(keysize / 8, 0);
-		public_y = TEE_Malloc(keysize / 8, 0);
-
-		if ((!private) || (!public_x) || (!public_y)) {
-			res = TEE_ERROR_OUT_OF_MEMORY;
-			goto PrepareExit_Error;
-		}
-
-		attrs[0].attributeID = TEE_ATTR_ECC_PRIVATE_VALUE;
-		attrs[0].content.ref.buffer = (void *)private;
-		attrs[0].content.ref.length = keysize / 8;
-
-		attrs[1].attributeID = TEE_ATTR_ECC_PUBLIC_VALUE_X;
-		attrs[1].content.ref.buffer = (void *)public_x;
-		attrs[1].content.ref.length = keysize / 8;
-
-		attrs[2].attributeID = TEE_ATTR_ECC_PUBLIC_VALUE_Y;
-		attrs[2].content.ref.buffer = (void *)public_y;
-		attrs[2].content.ref.length = keysize / 8;
-
-		nb_attrs = 4;
+		nb_attrs = 1;
 		break;
 
 	default:
