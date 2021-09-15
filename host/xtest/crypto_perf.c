@@ -974,7 +974,7 @@ static int run_test(struct test_param *test, FILE *log)
 
 	case TEE_OPERATION_KEY_DERIVATION:
 		/* Key Derivation operation */
-		outSize = test->keysize / 8;
+		outSize = ROUNDUP(test->keysize / 8, 8);
 		break;
 
 	case TEE_OPERATION_AE:
