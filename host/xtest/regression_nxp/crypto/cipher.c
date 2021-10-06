@@ -169,15 +169,15 @@ static void nxp_crypto_001(ADBG_Case_t *c)
 
 #define SIZE_CTR_MSG 240
 
-	cipher = malloc(SIZE_CTR_MSG);
+	cipher = calloc(1, SIZE_CTR_MSG);
 	if (!ADBG_EXPECT_NOT_NULL(c, cipher))
 		goto out_free;
 
-	msg = malloc(SIZE_CTR_MSG);
+	msg = calloc(1, SIZE_CTR_MSG);
 	if (!ADBG_EXPECT_NOT_NULL(c, msg))
 		goto out_free;
 
-	de_msg = malloc(SIZE_CTR_MSG);
+	de_msg = calloc(1, SIZE_CTR_MSG);
 	if (!ADBG_EXPECT_NOT_NULL(c, de_msg))
 		goto out_free;
 
@@ -334,7 +334,7 @@ static void nxp_crypto_002(ADBG_Case_t *c)
 	uint32_t key_size = 0;
 	size_t msg_size = ARRAY_SIZE(ciph_data_ref2);
 
-	de_msg = malloc(msg_size);
+	de_msg = calloc(1, msg_size);
 	if (!ADBG_EXPECT_NOT_NULL(c, de_msg))
 		goto out_free;
 
@@ -430,15 +430,15 @@ static void nxp_crypto_003(ADBG_Case_t *c)
 	size_t data_left = BIG_BUFFER_SIZE % len_data_ref;
 	size_t offset = 0;
 
-	big_input = malloc(BIG_BUFFER_SIZE);
+	big_input = calloc(1, BIG_BUFFER_SIZE);
 	if (!ADBG_EXPECT_NOT_NULL(c, big_input))
 		goto out_free;
 
-	big_output = malloc(BIG_BUFFER_SIZE);
+	big_output = calloc(1, BIG_BUFFER_SIZE);
 	if (!ADBG_EXPECT_NOT_NULL(c, big_output))
 		goto out_free;
 
-	dec_input = malloc(BIG_BUFFER_SIZE);
+	dec_input = calloc(1, BIG_BUFFER_SIZE);
 	if (!ADBG_EXPECT_NOT_NULL(c, dec_input))
 		goto out_free;
 
