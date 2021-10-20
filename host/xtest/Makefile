@@ -109,6 +109,7 @@ endif
 srcs += regression_nxp/dek_blob/dek_blob.c
 srcs += regression_nxp/ocotp/ocotp.c
 srcs += regression_nxp/digprog/digprog.c
+srcs += regression_nxp/crypto/mp_signature.c
 endif
 
 objs 	:= $(patsubst %.c,$(out-dir)/xtest/%.o, $(srcs))
@@ -144,6 +145,7 @@ CFLAGS += -I../../ta/tpm_log_test/include
 CFLAGS += -I../../ta/large/include
 CFLAGS += -I../../ta/supp_plugin/include
 CFLAGS += -I../../ta/crypto_perf/include
+CFLAGS += -I../../ta/mp_sign/include
 
 TA_DIR ?= /lib/optee_armtz
 CFLAGS += -DTA_DIR=\"$(TA_DIR)\"
