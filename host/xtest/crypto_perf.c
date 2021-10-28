@@ -358,6 +358,7 @@ static ssize_t read_random(void *in, size_t size)
 	readsize = fread(in, size, 1, rndfile);
 	if (readsize != 1) {
 		fprintf(stderr, "Can't read file [/dev/urandom]\n");
+		fclose(rndfile);
 		return 1;
 	}
 
