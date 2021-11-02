@@ -33,7 +33,8 @@ TA_DIRS := create_fail_test \
 	   socket \
 	   supp_plugin \
 	   large \
-	   crypto_perf
+	   crypto_perf \
+	   mp_sign
 
 ifeq ($(CFG_SECURE_DATA_PATH),y)
 TA_DIRS += sdp_basic

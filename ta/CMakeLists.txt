@@ -22,4 +22,5 @@ target_include_directories(${PROJECT_NAME}
 	INTERFACE tpm_log_test/include
 	INTERFACE supp_plugin/include
 	INTERFACE large/include
+	INTERFACE mp_sign/include
 )
