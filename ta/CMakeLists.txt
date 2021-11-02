@@ -23,4 +23,5 @@ target_include_directories(${PROJECT_NAME}
 	INTERFACE bti_test/include
 	INTERFACE supp_plugin/include
 	INTERFACE large/include
+	INTERFACE mp_sign/include
 )
