@@ -57,9 +57,9 @@ static int copy_buf_to_file(const void *buf, const char *filename, size_t size)
 /*
  * Retrieve the MP public key
  */
-static int get_pubkey(ADBG_Case_t *const c, TEEC_Session *sess, uint8_t *pubkey,
-		      size_t *pubkey_size, uint8_t *pubkey_pem,
-		      size_t *pubkey_pem_size)
+static TEEC_Result get_pubkey(ADBG_Case_t *const c, TEEC_Session *sess,
+			      uint8_t *pubkey, size_t *pubkey_size,
+			      uint8_t *pubkey_pem, size_t *pubkey_pem_size)
 {
 	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
@@ -81,14 +81,17 @@ static int get_pubkey(ADBG_Case_t *const c, TEEC_Session *sess, uint8_t *pubkey,
 	*pubkey_size = op.params[0].tmpref.size;
 	*pubkey_pem_size = op.params[1].tmpref.size;
 
+	if (res == TEEC_ERROR_NOT_SUPPORTED)
+		return res;
+
 	if (!ADBG_EXPECT(c, TEEC_SUCCESS, res)) {
 		Do_ADBG_Log("%s: PTA_MP_CMD_GET_PUBLIC_KEY res: %" PRIx32
 			    ", origin: %" PRIx32,
 			    __func__, res, err_origin);
-		return EXIT_FAILURE;
+		return res;
 	}
 
-	return EXIT_SUCCESS;
+	return TEEC_SUCCESS;
 }
 
 /*
@@ -410,9 +413,15 @@ static void nxp_crypto_0020(ADBG_Case_t *const c)
 	if (!ADBG_EXPECT(c, TEEC_SUCCESS, res))
 		goto exit;
 
-	ret = get_pubkey(c, &sess, pubkey, &pubkey_size, pubkey_pem,
+	res = get_pubkey(c, &sess, pubkey, &pubkey_size, pubkey_pem,
 			 &pubkey_pem_size);
-	if (!ADBG_EXPECT(c, EXIT_SUCCESS, ret))
+
+	if (res == TEEC_ERROR_NOT_SUPPORTED) {
+		Do_ADBG_Log("Skip test, MP not functional");
+		return;
+	}
+
+	if (!ADBG_EXPECT(c, TEEC_SUCCESS, res))
 		goto exit;
 
 	/* Loop over the different sizes of messages to sign */
