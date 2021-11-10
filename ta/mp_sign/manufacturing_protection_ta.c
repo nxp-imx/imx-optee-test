@@ -157,7 +157,6 @@ static TEE_Result sign_message(uint32_t param_types, TEE_Param params[4])
 	if (res != TEE_SUCCESS) {
 		EMSG("%s failed with code 0x%" PRIx32,
 		     "PTA_MP_CMD_SIGNATURE_MPMR", res);
-		res = TEE_ERROR_BAD_PARAMETERS;
 		goto out;
 	}
 
@@ -223,7 +222,6 @@ static TEE_Result get_mp_pubk(uint32_t param_types, TEE_Param params[4])
 	if (res != TEE_SUCCESS) {
 		EMSG("%s failed with code 0x%" PRIx32,
 		     "PTA_MP_CMD_GET_PUBLIC_KEY", res);
-		res = TEE_ERROR_BAD_PARAMETERS;
 		goto out;
 	}
 
