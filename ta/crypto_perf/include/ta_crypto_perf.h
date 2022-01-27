@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright 2018-2021 NXP
+ * Copyright 2018-2022 NXP
  */
 
 #ifndef __TA_CRYPTO_PERF_H__
@@ -68,4 +68,9 @@ TEE_Result TA_KeyDeriveFreeAlgo(uint32_t algo, TEE_Param params[4]);
 TEE_Result TA_AuthenEncPrepareAlgo(uint32_t algo, TEE_Param params[4]);
 TEE_Result TA_AuthenEncProcessAlgo(uint32_t algo, TEE_Param params[4]);
 TEE_Result TA_AuthenEncFreeAlgo(uint32_t algo, TEE_Param params[4]);
+
+/* Key generation functions */
+TEE_Result TA_PrepareGen(uint32_t ParamTypes, TEE_Param Params[4]);
+TEE_Result TA_Generate(uint32_t ParamTypes, TEE_Param Params[4]);
+void TA_FreeGen(void);
 #endif

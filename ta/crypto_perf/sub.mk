@@ -8,3 +8,4 @@ srcs-y += ta_alg_asymcipher.c
 srcs-y += ta_alg_asymdigest.c
 srcs-y += ta_alg_keyderive.c
 srcs-y += ta_alg_ae.c
+srcs-y += ta_keygen.c
