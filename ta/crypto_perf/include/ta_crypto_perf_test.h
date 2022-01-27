@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright 2018 NXP
+ * Copyright 2018, 2022 NXP
  */
 
 #ifndef __TA_CRYPTO_PERF_TEST_H__
@@ -25,5 +25,8 @@ struct ta_caps {
 #define TA_CRYPTO_PERF_CMD_PREPARE_ALG	(3)
 #define TA_CRYPTO_PERF_CMD_PROCESS		(4)
 #define TA_CRYPTO_PERF_CMD_FREE_ALG		(5)
+#define TA_CRYPTO_PERF_CMD_PREPARE_GEN		(6)
+#define TA_CRYPTO_PERF_CMD_GENERATE		(7)
+#define TA_CRYPTO_PERF_CMD_FREE_GEN		(8)
 
 #endif

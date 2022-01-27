@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-2-Clause
 /*
- * Copyright 2018-2021 NXP
+ * Copyright 2018-2022 NXP
  */
 #include <stdint.h>
 #include <stdio.h>
@@ -58,7 +58,8 @@ static FILE * dataFile;
 #endif
 
 /* Local function prototypes */
-static int free_algo(TEEC_Operation *op);
+struct test_param;
+static int free_algo(const struct test_param *test, TEEC_Operation *op);
 
 /*
  * Hash Algo Names
@@ -91,6 +92,7 @@ struct test_param {
 	uint16_t keysize;
 	uint32_t loop;
 	uint32_t bufsize;
+	bool generate;
 };
 
 static void setdefault_param(struct test_param *test)
@@ -102,6 +104,7 @@ static void setdefault_param(struct test_param *test)
 	test->keysize   = DEFAULT_KEY_SIZE;
 	test->loop      = DEFAULT_LOOP;
 	test->bufsize   = DEFAULT_BUFFER_SIZE;
+	test->generate = false;
 }
 
 /*
@@ -567,9 +570,9 @@ static int check_test(struct test_param *test)
 		return ERROR_BAD_TEST_GENERIC;
 	}
 
-	if (test->bufsize == 0) {
-		vverbose("Algo name [%s]: buffer size [%d] not supported\n",
-			test->alg, test->bufsize);
+	if (!test->generate && test->bufsize == 0) {
+		vverbose("Algo name [%s]: bufsize [%d] not supported\n",
+			 test->alg, test->bufsize);
 		return ERROR_BAD_TEST_GENERIC;
 	}
 
@@ -627,6 +630,8 @@ static int extract_test(struct test_param *test, char *cmdline,
 			test->bufsize = strsize_to_bytes(elem);
 			if (test->bufsize == (uint32_t)(-1))
 				return ERROR_BAD_TEST_GENERIC;
+		} else if (!strcmp(elem, "-g")) {
+			test->generate = true;
 		}
 
 		if (elem)
@@ -636,8 +641,8 @@ static int extract_test(struct test_param *test, char *cmdline,
 	return 0;
 }
 
-static int asym_digest(int verbosity, uint32_t alg_id,
-				TEEC_SharedMemory *in_shm, size_t *inSize)
+static int asym_digest(const struct test_param *test, uint32_t alg_id,
+		       TEEC_SharedMemory *in_shm, size_t *inSize)
 {
 	/*
 	 * Function hash input buffer (in_shm) of length inSize
@@ -652,6 +657,7 @@ static int asym_digest(int verbosity, uint32_t alg_id,
 	uint32_t hash_id;
 	size_t   outSize;
 	uint32_t ret_origin;
+	int verbosity = test->verbose;
 
 	/* Allocate the output buffer function of the hash resulting */
 	if (TEE_ALG_GET_MAIN_ALG(alg_id) == TEE_MAIN_ALGO_ECDSA)
@@ -748,34 +754,36 @@ static int asym_digest(int verbosity, uint32_t alg_id,
 
 	verbose("Asymmetric Digest Done size: %zu\n", outSize);
 asym_digest_exit:
-	free_algo(&op);
+	free_algo(test, &op);
 	TEEC_ReleaseSharedMemory(&out_shm);
 	return ret;
 }
 
-static int prepare_algo(struct test_param *test,
-				uint8_t *reverse, uint32_t *alg_id,
-				uint64_t *t_prepare)
+static int prepare_algo(const struct test_param *test, uint8_t *reverse,
+			uint32_t *alg_id, uint64_t *t_prepare)
 {
 	TEEC_Operation op = {0};
 	TEEC_Result    res;
 	uint32_t       ret_origin;
 	struct timespec t0, t1;
+	uint32_t command = TA_CRYPTO_PERF_CMD_PREPARE_ALG;
 
 	op.paramTypes = TEEC_PARAM_TYPES(
 		TEEC_MEMREF_TEMP_INPUT,
 		TEEC_VALUE_INPUT,
 		TEEC_VALUE_OUTPUT,
 		TEEC_NONE);
-	op.params[0].tmpref.buffer = test->alg;
+	op.params[0].tmpref.buffer = (void *)test->alg;
 	op.params[0].tmpref.size   = strlen(test->alg);
 
 	op.params[1].value.a = test->keysize;
 	op.params[1].value.b = test->bufsize;
 
+	if (test->generate)
+		command = TA_CRYPTO_PERF_CMD_PREPARE_GEN;
+
 	get_current_time(&t0);
-	res = TEEC_InvokeCommand(&sess, TA_CRYPTO_PERF_CMD_PREPARE_ALG,
-							&op, &ret_origin);
+	res = TEEC_InvokeCommand(&sess, command, &op, &ret_origin);
 
 	get_current_time(&t1);
 
@@ -790,13 +798,16 @@ static int prepare_algo(struct test_param *test,
 	return 0;
 }
 
-static int free_algo(TEEC_Operation *op)
+static int free_algo(const struct test_param *test, TEEC_Operation *op)
 {
 	TEEC_Result res;
 	uint32_t ret_origin;
+	uint32_t command = TA_CRYPTO_PERF_CMD_FREE_ALG;
 
-	res = TEEC_InvokeCommand(&sess, TA_CRYPTO_PERF_CMD_FREE_ALG,
-							op, &ret_origin);
+	if (test->generate)
+		command = TA_CRYPTO_PERF_CMD_FREE_GEN;
+
+	res = TEEC_InvokeCommand(&sess, command, op, &ret_origin);
 
 	if (check_res(res, "TEEC_InvokeCommand free algorithm") != 0)
 		return ERROR_TA_FREE_ALGO;
@@ -804,8 +815,8 @@ static int free_algo(TEEC_Operation *op)
 	return 0;
 }
 
-static int run_algo(uint32_t iteration, int verbosity,
-			TEEC_Operation *op, struct statistics *stats)
+static int run_algo(const struct test_param *test, TEEC_Operation *op,
+		    struct statistics *stats, uint32_t cmd)
 {
 	TEEC_Result res;
 	uint32_t ret_origin;
@@ -813,14 +824,14 @@ static int run_algo(uint32_t iteration, int verbosity,
 	int      ret;
 	uint32_t loop;
 	uint64_t diff_t;
+	int verbosity = test->verbose;
 
-	loop = iteration;
+	loop = test->loop;
 
 	while (loop-- > 0) {
 		get_current_time(&t0);
 
-		res = TEEC_InvokeCommand(&sess, TA_CRYPTO_PERF_CMD_PROCESS,
-							op, &ret_origin);
+		res = TEEC_InvokeCommand(&sess, cmd, op, &ret_origin);
 
 		if (check_res(res, "TEEC_InvokeCommand Process") != 0) {
 			ret = ERROR_TA_CMD_PROCESS;
@@ -832,13 +843,13 @@ static int run_algo(uint32_t iteration, int verbosity,
 		diff_t = timespec_diff_ns(&t0, &t1);
 		update_stats(stats, diff_t);
 
-		if ((loop % (iteration / 10)) == 0)
+		if ((loop % (test->loop / 10)) == 0)
 			vverbose(".");
 	}
 
 	vverbose("\n");
 
-	ret = free_algo(op);
+	ret = free_algo(test, op);
 
 run_algo_exit:
 	return ret;
@@ -871,6 +882,24 @@ static int run_test(struct test_param *test, FILE *log)
 	ret = prepare_algo(test, &reverse, &alg_id, &t_prepare);
 	if (ret != 0)
 		goto run_test_exit;
+
+	if (test->generate) {
+		verbose("\nTest Generation %s\n", test->alg);
+		verbose("Keysize:   %d\n", test->keysize);
+		verbose("Loop:      %d\n", test->loop);
+
+		op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
+						 TEEC_NONE, TEEC_NONE);
+
+		op.params[0].value.a = test->keysize;
+
+		ret = run_algo(test, &op, &stats_enc,
+			       TA_CRYPTO_PERF_CMD_GENERATE);
+		if (ret != 0)
+			goto run_test_exit;
+
+		goto run_test_end;
+	}
 
 	if (TEE_ALG_GET_CLASS(alg_id) == TEE_OPERATION_KEY_DERIVATION)
 		inSize = test->keysize / 8;
@@ -1038,7 +1067,7 @@ static int run_test(struct test_param *test, FILE *log)
 		 * Input buffer must be digest and this is the hash
 		 * resulting which is signed/verified
 		 */
-		ret = asym_digest(verbosity, alg_id, &in_shm, &inSize);
+		ret = asym_digest(test, alg_id, &in_shm, &inSize);
 		if (ret != 0)
 			goto run_test_exit;
 		/*
@@ -1065,7 +1094,7 @@ static int run_test(struct test_param *test, FILE *log)
 
 	stats_enc.data_size = inSize;
 
-	ret = run_algo(test->loop, verbosity, &op, &stats_enc);
+	ret = run_algo(test, &op, &stats_enc, TA_CRYPTO_PERF_CMD_PROCESS);
 
 	if (ret != 0)
 		goto run_test_exit;
@@ -1137,7 +1166,7 @@ static int run_test(struct test_param *test, FILE *log)
 	}
 
 	stats_dec.data_size = outSize;
-	ret = run_algo(test->loop, verbosity, &op, &stats_dec);
+	ret = run_algo(test, &op, &stats_dec, TA_CRYPTO_PERF_CMD_PROCESS);
 
 	if (ret != 0)
 		goto run_test_exit;
@@ -1147,7 +1176,10 @@ run_test_end:
 	fprintf(stderr, "\nTest Result for %s\n", test->alg);
 	fprintf(stderr, "** Preparation (Key Generation) **\n");
 	fprintf(stderr, "time=%gμs\n", (double)(t_prepare) / 1000);
-	fprintf(stderr, "** Encryption direction **\n");
+	if (test->generate)
+		fprintf(stderr, "** Key generation **\n");
+	else
+		fprintf(stderr, "** Encryption direction **\n");
 	fprintf(stderr,
 		"min=%gμs max=%gμs mean=%gμs stddev=%gμs (%g MiB/s)\n",
 		(stats_enc.min / 1000),
@@ -1362,8 +1394,8 @@ static void usage(const char *progname)
 	fprintf(stderr, "\t%s -infile test_file [-log log_file] [-v level]\n",
 	progname);
 	fprintf(stderr,
-	"\t%s -alg alg_name [-i] [-n loops] [-r] [-s bufsize] [-v level]\n",
-	progname);
+		"\t%s -alg alg_name [-g] [-i] [-n loops] [-r] [-s bufsize] [-v level]\n",
+		progname);
 	fprintf(stderr, "\t%s -alglist\n", progname);
 	fprintf(stderr, "Options:\n");
 	fprintf(stderr, "\t-h        Print this help and exit\n");
@@ -1379,8 +1411,8 @@ static void usage(const char *progname)
 	"\t-alg      Algorithm name (use option -alglist to get list)\n");
 	fprintf(stderr,
 	"\t-k        Key size in bits [%d]\n", DEFAULT_KEY_SIZE);
-	fprintf(stderr,
-	"\t-i        Use same buffer for input and output\n");
+	fprintf(stderr, "\t-g        Generate key\n");
+	fprintf(stderr, "\t-i        Use same buffer for input and output\n");
 	fprintf(stderr,
 	"\t-n        Number of iterations (2 minimum) [%d]\n", DEFAULT_LOOP);
 	fprintf(stderr,
@@ -1539,6 +1571,8 @@ int crypto_perf_runner_cmd_parser(int argc, char *argv[])
 				goto help;
 
 			idx += 1; /* Next parameter */
+		} else if (!strcmp(argv[idx], "-g")) {
+			test_param.generate = true;
 		}
 	}
 
