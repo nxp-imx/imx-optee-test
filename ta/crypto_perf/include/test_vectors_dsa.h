@@ -2,13 +2,14 @@
 /*
  * Copyright (c) 2014, STMicroelectronics International N.V.
  * Copyright (c) 2021, SumUp Services GmbH
- * Copyright 2021 NXP
+ * Copyright 2021-2022 NXP
  */
 
 #ifndef __TEST_VECTORS_DSA_H__
 #define __TEST_VECTORS_DSA_H__
 
 #include <stdint.h>
+#include <util.h>
 
 /*
  * Test data from 186-3dsatestvectors.zip KeyPair.rsp
@@ -393,6 +394,34 @@ static const uint8_t keygen_dsa3072_g[] = {
 	0xec, 0xfe, 0x83, 0xfa, 0x93, 0x98, 0xcf, 0x15, 0x0a, 0xfa, 0x28, 0x6d,
 	0xc7, 0xeb, 0x79, 0x49, 0x75, 0x0c, 0xf5, 0x00, 0x1c, 0xe1, 0x04, 0xe9,
 	0x18, 0x7f, 0x7e, 0x16, 0x85, 0x9a, 0xfa, 0x8f, 0xd0, 0xd7, 0x75, 0xae,
+};
+
+#define CPERF_DSA_TEST_DATA(size, vect) \
+	{ \
+		size, vect##_p, ARRAY_SIZE(vect##_p), vect##_g, \
+			ARRAY_SIZE(vect##_g), vect##_q, ARRAY_SIZE(vect##_q) \
+	}
+
+static const struct dsa_key_type {
+	uint32_t key_size_bits;
+	const uint8_t *prime;
+	size_t prime_len;
+	const uint8_t *base;
+	size_t base_len;
+	const uint8_t *sub_prime;
+	size_t sub_prime_len;
+} dsa_key_types[] = {
+	CPERF_DSA_TEST_DATA(512, keygen_dsa512),
+	CPERF_DSA_TEST_DATA(576, keygen_dsa576),
+	CPERF_DSA_TEST_DATA(640, keygen_dsa640),
+	CPERF_DSA_TEST_DATA(704, keygen_dsa704),
+	CPERF_DSA_TEST_DATA(768, keygen_dsa768),
+	CPERF_DSA_TEST_DATA(832, keygen_dsa832),
+	CPERF_DSA_TEST_DATA(896, keygen_dsa896),
+	CPERF_DSA_TEST_DATA(960, keygen_dsa960),
+	CPERF_DSA_TEST_DATA(1024, keygen_dsa1024),
+	CPERF_DSA_TEST_DATA(2048, keygen_dsa2048),
+	CPERF_DSA_TEST_DATA(3072, keygen_dsa3072),
 };
 
 #endif

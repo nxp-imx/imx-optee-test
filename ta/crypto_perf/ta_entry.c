@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-2-Clause
 /*
- * Copyright 2018-2021 NXP
+ * Copyright 2018-2022 NXP
  */
 
 #include <stdio.h>
@@ -294,6 +294,16 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 
 	case TA_CRYPTO_PERF_CMD_FREE_ALG:
 		return TA_FreeAlgo(nParamTypes, pParams);
+
+	case TA_CRYPTO_PERF_CMD_PREPARE_GEN:
+		return TA_PrepareGen(nParamTypes, pParams);
+
+	case TA_CRYPTO_PERF_CMD_GENERATE:
+		return TA_Generate(nParamTypes, pParams);
+
+	case TA_CRYPTO_PERF_CMD_FREE_GEN:
+		TA_FreeGen();
+		return TEE_SUCCESS;
 
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;

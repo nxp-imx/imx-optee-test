@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-2-Clause
 /*
- * Copyright 2018, 2021 NXP
+ * Copyright 2018, 2021-2022 NXP
  */
 
 #include <stdio.h>
@@ -10,14 +10,9 @@
 #include <test_vectors_dsa.h>
 #include <trace.h>
 #include <user_ta_header_defines.h>
-#include <util.h>
 
 #define SIGN_ALGO	(1 << 0)
 #define VERIFY_ALGO	(1 << 1)
-
-#ifndef ARRAY
-#define ARRAY(a)            a, ARRAY_SIZE(a)
-#endif
 
 static TEE_OperationHandle asymdigestSign_op;
 static TEE_OperationHandle asymdigestVerif_op;
@@ -97,52 +92,30 @@ TEE_Result TA_AsymDigestPrepareAlgo(uint32_t algo, TEE_Param params[4])
 		if (keysize % 64)
 			return TEE_ERROR_BAD_PARAMETERS;
 
-#define CPERF_DSA_TEST_DATA(vect) \
-	ARRAY(vect ## _p), \
-	ARRAY(vect ## _g), \
-	ARRAY(vect ## _q)
-		static const struct {
-			uint32_t key_size_bits;
-			const uint8_t *prime;
-			size_t prime_len;
-			const uint8_t *base;
-			size_t base_len;
-			const uint8_t *sub_prime;
-			size_t sub_prime_len;
-		} key_types[] = {
-			{ 512, CPERF_DSA_TEST_DATA(keygen_dsa512) },
-			{ 576, CPERF_DSA_TEST_DATA(keygen_dsa576) },
-			{ 640, CPERF_DSA_TEST_DATA(keygen_dsa640) },
-			{ 704, CPERF_DSA_TEST_DATA(keygen_dsa704) },
-			{ 768, CPERF_DSA_TEST_DATA(keygen_dsa768) },
-			{ 832, CPERF_DSA_TEST_DATA(keygen_dsa832) },
-			{ 896, CPERF_DSA_TEST_DATA(keygen_dsa896) },
-			{ 960, CPERF_DSA_TEST_DATA(keygen_dsa960) },
-			{ 1024, CPERF_DSA_TEST_DATA(keygen_dsa1024) },
-			{ 2048, CPERF_DSA_TEST_DATA(keygen_dsa2048) },
-			{ 3072, CPERF_DSA_TEST_DATA(keygen_dsa3072) },
-		};
-
-		for (n = 0; n < ARRAY_SIZE(key_types); n++) {
-			if (key_types[n].key_size_bits != keysize)
+		for (n = 0; n < ARRAY_SIZE(dsa_key_types); n++) {
+			if (dsa_key_types[n].key_size_bits != keysize)
 				continue;
 
-			prime_len = key_types[n].prime_len;
-			subprime_len = key_types[n].sub_prime_len;
-			base_len = key_types[n].base_len;
+			prime_len = dsa_key_types[n].prime_len;
+			subprime_len = dsa_key_types[n].sub_prime_len;
+			base_len = dsa_key_types[n].base_len;
 
-			prime    = TEE_Malloc(key_types[n].prime_len, 0);
-			subprime = TEE_Malloc(key_types[n].sub_prime_len, 0);
-			base     = TEE_Malloc(key_types[n].base_len, 0);
+			prime = TEE_Malloc(dsa_key_types[n].prime_len, 0);
+			subprime = TEE_Malloc(dsa_key_types[n].sub_prime_len,
+					      0);
+			base = TEE_Malloc(dsa_key_types[n].base_len, 0);
 
 			if ((!prime) || (!subprime) || (!base)) {
 				res = TEE_ERROR_OUT_OF_MEMORY;
 				goto PrepareExit_Error;
 			}
 
-			memcpy(prime, key_types[n].prime, key_types[n].prime_len);
-			memcpy(subprime, key_types[n].sub_prime, key_types[n].sub_prime_len);
-			memcpy(base, key_types[n].base, key_types[n].base_len);
+			memcpy(prime, dsa_key_types[n].prime,
+			       dsa_key_types[n].prime_len);
+			memcpy(subprime, dsa_key_types[n].sub_prime,
+			       dsa_key_types[n].sub_prime_len);
+			memcpy(base, dsa_key_types[n].base,
+			       dsa_key_types[n].base_len);
 			break;
 		}
 
