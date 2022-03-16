@@ -277,10 +277,9 @@ static void print_log_test(FILE *log, struct test_param *test)
 		fprintf(log, "%4s |", "No");
 }
 
-static void print_log_result(FILE *log, uint8_t reverse,
-					 struct statistics *stats_enc,
-					 struct statistics *stats_dec,
-					 double t_prep)
+static void print_log_result(FILE *log, uint8_t reverse, bool generate,
+			     struct statistics *stats_enc,
+			     struct statistics *stats_dec, double t_prep)
 {
 	char tmp[20];
 
@@ -291,7 +290,11 @@ static void print_log_result(FILE *log, uint8_t reverse,
 	fprintf(log, "%9c | ", ' ');
 	fprintf(log, "%10g\n", t_prep);
 
-	fprintf(log, " %s| Enc |", HeadP1Empty);
+	if (generate)
+		fprintf(log, " %s| Gen |", HeadP1Empty);
+	else
+		fprintf(log, " %s| Enc |", HeadP1Empty);
+
 	fprintf(log, "%9s | ", size_to_str(stats_enc->data_size, tmp));
 	fprintf(log, "%10g | %10g | %10g | %10g | %10g\n",
 		(stats_enc->min / 1000),
@@ -1200,8 +1203,8 @@ run_test_end:
 	}
 	fprintf(stderr, "\n");
 
-	print_log_result(log, reverse, &stats_enc, &stats_dec,
-			((double)(t_prepare) / 1000));
+	print_log_result(log, reverse, test->generate, &stats_enc, &stats_dec,
+			 ((double)(t_prepare) / 1000));
 
 run_test_exit:
 	if (log)
