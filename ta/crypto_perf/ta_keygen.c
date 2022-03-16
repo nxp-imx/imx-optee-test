@@ -290,6 +290,7 @@ TEE_Result TA_Generate(uint32_t ParamTypes, TEE_Param Params[4])
 void TA_FreeGen(void)
 {
 	TEE_FreeTransientObject(hkey_gen);
+	hkey_gen = TEE_HANDLE_NULL;
 	memset(key_gen_attrs, 0, sizeof(key_gen_attrs));
 	key_gen_nb_attrs = 0;
 }
