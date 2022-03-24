@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-2-Clause
 /*
- * Copyright 2021 NXP
+ * Copyright 2021-2022 NXP
  */
 
 /*
@@ -14,46 +14,20 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <openssl/bn.h>
-#include <openssl/evp.h>
-#include <openssl/err.h>
-#include <openssl/ossl_typ.h>
-#include <openssl/x509.h>
-#include <openssl/opensslv.h>
 #include <tee_client_api.h>
 #include <tee_client_api_extensions.h>
 #include <ta_manufacturing_protection.h>
 #include <pta_imx_manufacturing_protection.h>
 #include <utee_defines.h>
 
-#define DEFAULT_INPUTS_FILENAME	   "inputs.txt"
-#define DEFAULT_MPPUBKEY_FILENAME  "key.pem"
-#define DEFAULT_SIGNATURE_FILENAME "sig.bin"
-
-static int copy_buf_to_file(const void *buf, const char *filename, size_t size)
-{
-	FILE *f = NULL;
-
-	/*
-	 * opens the file in writing binary mode
-	 * it's expected that we obtain a text filename
-	 */
-	f = fopen(filename, "wb");
-	if (!f) {
-		Do_ADBG_Log("%s: %s failed [%s]", __func__, "fopen", filename);
-		return EXIT_FAILURE;
-	}
-
-	/* writes the buffer content into the file */
-	if (fwrite(buf, 1, size, f) != size) {
-		Do_ADBG_Log("%s: %s failed [%s]", __func__, "fwrite", filename);
-		fclose(f);
-		return EXIT_FAILURE;
-	}
-
-	fclose(f);
-	return EXIT_SUCCESS;
-}
+#ifdef OPENSSL_FOUND
+#include <openssl/ecdsa.h>
+#include <openssl/sha.h>
+#include <openssl/ec.h>
+#include <openssl/bn.h>
+#include <openssl/obj_mac.h>
+#include <openssl/err.h>
+#endif /* OPENSSL_FOUND */
 
 /*
  * Retrieve the MP public key
@@ -95,98 +69,196 @@ static TEEC_Result get_pubkey(ADBG_Case_t *const c, TEEC_Session *sess,
 	return TEEC_SUCCESS;
 }
 
+#ifdef OPENSSL_FOUND
 /*
- * Call openssl tool dgst to verify the signature of a message
- */
-static int verify_msg_sig(ADBG_Case_t *const c, uint8_t *mpmr_msg,
-			  size_t mpmr_msg_size, const uint8_t *der_sig,
-			  size_t der_sig_size, const uint8_t *pubkey_pem,
-			  size_t pubkey_pem_size)
-{
-	char openssl_command[256] = {};
-
-	/* Write the data to FS */
-	if (copy_buf_to_file(mpmr_msg, DEFAULT_INPUTS_FILENAME,
-			     mpmr_msg_size) != EXIT_SUCCESS) {
-		Do_ADBG_Log("%s: %s failed [%s]", __func__, "copy_buf_to_file",
-			    DEFAULT_INPUTS_FILENAME);
-		return EXIT_FAILURE;
-	}
-
-	if (copy_buf_to_file(der_sig, DEFAULT_SIGNATURE_FILENAME,
-			     der_sig_size) != EXIT_SUCCESS) {
-		Do_ADBG_Log("%s: %s failed [%s]", __func__, "copy_buf_to_file",
-			    DEFAULT_SIGNATURE_FILENAME);
-		return EXIT_FAILURE;
-	}
-
-	if (copy_buf_to_file(pubkey_pem, DEFAULT_MPPUBKEY_FILENAME,
-			     pubkey_pem_size) != EXIT_SUCCESS) {
-		Do_ADBG_Log("%s: %s failed [%s]", __func__, "copy_buf_to_file",
-			    DEFAULT_MPPUBKEY_FILENAME);
-		return EXIT_FAILURE;
-	}
-
-	sprintf(openssl_command,
-		"openssl dgst -sha256 -verify %s -signature %s %s",
-		DEFAULT_MPPUBKEY_FILENAME, DEFAULT_SIGNATURE_FILENAME,
-		DEFAULT_INPUTS_FILENAME);
-
-	if (system(openssl_command) != 0) {
-		Do_ADBG_Log("%s: %s failed [%s]", __func__, "system",
-			    openssl_command);
-		return EXIT_FAILURE;
-	}
-
-	return EXIT_SUCCESS;
-}
-
-/*
- * Convert a signature to a DER representation compatible with openssl dgst
+ * Convert a signature to a DER representation following ASN1
  *
- * Openssl expect a signature of the DER format:
+ * A signature of the DER format:
  * SEQUENCE {
  *    INTEGER 0x27361817047a4f09fd5ef43ab76eb1440ce8c12a0f31a8c02811282ea011b08d
  *    INTEGER 0x25d09c08895417fdd21523815e195a1bb4b780c398413702ee98978b9e6fffed
  * }
  * First INTEGER is the first half the signature binary buffer: R component
  * Second INTEGER is the second half the signature binary buffer: S component
+ *
+ * For simplicity, we are using the uncompressed form indicated by the first
+ * byte
+ *
  * Note: If the INTEGER has its MSB bit set, it needs to be appended a 0x00
- * Use OpenSSL to do it automatically
  */
-static int convert_raw_sig_to_openssl_sig(ADBG_Case_t *const c,
-					  const uint8_t *raw_sig,
-					  size_t raw_sig_size, uint8_t *der_sig,
-					  size_t *der_sig_size)
-{
-	int ret = EXIT_FAILURE;
-	BIGNUM *bn_r = NULL;
-	BIGNUM *bn_s = NULL;
-	size_t half_size = raw_sig_size / 2;
-	ECDSA_SIG *ec_sig = NULL;
-	unsigned char *p = der_sig;
-	size_t sig_req_size = 0;
+#define DER_UNCOMPRESSED_FORM 0x4
 
-	ec_sig = ECDSA_SIG_new();
-	if (!ADBG_EXPECT_NOT_NULL(c, ec_sig)) {
-		Do_ADBG_Log("%s: Failed to allocate EC signature", __func__);
-		goto free_bn;
+static int der_encap(uint8_t *der_sig, size_t *der_sig_size,
+		     const uint8_t *raw_sig, size_t raw_sig_size)
+{
+	size_t req = 0;
+
+	/*
+	 * For the simple uncompressed form, we just need to add a leading
+	 * byte
+	 */
+	req = raw_sig_size + 1;
+
+	if (*der_sig_size < req) {
+		*der_sig_size = req;
+		return EXIT_FAILURE;
 	}
 
-#if OPENSSL_VERSION_NUMBER <= 0x10100006L
-	BN_clear_free(ec_sig->r);
-	BN_clear_free(ec_sig->s);
+	der_sig[0] = DER_UNCOMPRESSED_FORM;
+	memcpy(der_sig + 1, raw_sig, raw_sig_size);
+
+	*der_sig_size = req;
+
+	return EXIT_SUCCESS;
+}
+
+static void print_ossl_errors(void)
+{
+	unsigned long error = 0;
+	const char *file = NULL;
+	int line = 0;
+	const char *data = NULL;
+	int flags = 0;
+
+	while ((error = ERR_get_error_line_data(&file, &line, &data, &flags)))
+		Do_ADBG_Log("OSSL(%lx)[%s@%d (%p | %x)]: %s", error, file, line,
+			    data, flags, ERR_error_string(error, NULL));
+}
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+/* From https://wiki.openssl.org/index.php/OpenSSL_1.1.0_Changes */
+static int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s)
+{
+	if (!r || !s)
+		return 0;
+	BN_clear_free(sig->r);
+	BN_clear_free(sig->s);
+	sig->r = r;
+	sig->s = s;
+	return 1;
+}
 #endif
+
+static int verify_msg_sig_openssl(ADBG_Case_t *const c, uint8_t *mpmr_msg,
+				  size_t mpmr_msg_size, const uint8_t *raw_sig,
+				  size_t raw_sig_size, const uint8_t *pubkey,
+				  size_t pubkey_size)
+{
+	int ret = EXIT_FAILURE;
+	int err = 0;
+	int success = 0;
+	unsigned char digest[SHA256_DIGEST_LENGTH] = {};
+	SHA256_CTX sha_ctx = {};
+	ECDSA_SIG *sig = NULL;
+	uint8_t *der_pubkey = NULL;
+	size_t der_pubkey_size = 0;
+	EC_KEY *key = NULL;
+	EC_POINT *pub = NULL;
+	EC_GROUP *group = NULL;
+	BN_CTX *bn_ctx = NULL;
+	size_t req = 0;
+	size_t half_size = pubkey_size / 2;
+	BIGNUM *bn_r = NULL;
+	BIGNUM *bn_s = NULL;
+
+	success = SHA256_Init(&sha_ctx);
+	if (!ADBG_EXPECT(c, 1, success)) {
+		Do_ADBG_Log("%s: %s failed", __func__, "SHA256_Init");
+		goto exit;
+	}
+
+	success = SHA256_Update(&sha_ctx, mpmr_msg, mpmr_msg_size);
+	if (!ADBG_EXPECT(c, 1, success)) {
+		Do_ADBG_Log("%s: %s failed", __func__, "SHA256_Update");
+		goto exit;
+	}
+
+	success = SHA256_Final(digest, &sha_ctx);
+	if (!ADBG_EXPECT(c, 1, success)) {
+		Do_ADBG_Log("%s: %s failed", __func__, "SHA256_Final");
+		goto exit;
+	}
+
+	key = EC_KEY_new();
+	if (!ADBG_EXPECT_NOT_NULL(c, key)) {
+		Do_ADBG_Log("%s: %s failed", __func__, "EC_KEY_new");
+		goto exit;
+	}
+
+	group = EC_GROUP_new_by_curve_name(NID_X9_62_prime256v1);
+	if (!ADBG_EXPECT_NOT_NULL(c, group)) {
+		Do_ADBG_Log("%s: %s failed", __func__,
+			    "EC_GROUP_new_by_curve_name");
+		goto exit;
+	}
+
+	success = EC_KEY_set_group(key, group);
+	if (!ADBG_EXPECT(c, 1, success)) {
+		Do_ADBG_Log("%s: %s failed", __func__, "EC_KEY_set_group");
+		goto exit;
+	}
+
+	pub = EC_POINT_new(group);
+	if (!ADBG_EXPECT_NOT_NULL(c, pub)) {
+		Do_ADBG_Log("%s: %s failed", __func__, "EC_POINT_new");
+		goto exit;
+	}
+
+	bn_ctx = BN_CTX_new();
+	if (!ADBG_EXPECT_NOT_NULL(c, bn_ctx)) {
+		Do_ADBG_Log("%s: %s failed", __func__, "BN_CTX_new");
+		goto exit;
+	}
+
+	err = der_encap(NULL, &req, pubkey, pubkey_size);
+	if (!ADBG_EXPECT(c, EXIT_FAILURE, err)) {
+		Do_ADBG_Log("%s: %s failed", __func__, "der_encap get size");
+		goto exit;
+	}
+
+	der_pubkey = malloc(req);
+	if (!ADBG_EXPECT_NOT_NULL(c, der_pubkey)) {
+		Do_ADBG_Log("%s: %s failed", __func__, "malloc");
+		goto exit;
+	}
+
+	der_pubkey_size = req;
+
+	/* We can pass the PEM version which already make it a der */
+	err = der_encap(der_pubkey, &der_pubkey_size, pubkey, pubkey_size);
+	if (!ADBG_EXPECT(c, EXIT_SUCCESS, err)) {
+		Do_ADBG_Log("%s: %s failed", __func__, "der_encap pubkey");
+		goto exit;
+	}
+
+	success = EC_POINT_oct2point(group, pub, der_pubkey, der_pubkey_size,
+				     bn_ctx);
+	if (!ADBG_EXPECT(c, 1, success)) {
+		Do_ADBG_Log("%s: %s failed", __func__, "EC_POINT_oct2point");
+		goto exit;
+	}
+
+	success = EC_KEY_set_public_key(key, pub);
+	if (!ADBG_EXPECT(c, 1, success)) {
+		Do_ADBG_Log("%s: %s failed", __func__, "EC_KEY_set_public_key");
+		goto exit;
+	}
+
+	sig = ECDSA_SIG_new();
+	if (!ADBG_EXPECT_NOT_NULL(c, sig)) {
+		Do_ADBG_Log("%s: %s failed", __func__, "ECDSA_SIG_new");
+		goto exit;
+	}
 
 	bn_r = BN_bin2bn(raw_sig, half_size, NULL);
 	if (!ADBG_EXPECT_NOT_NULL(c, bn_r)) {
-		Do_ADBG_Log("%s: Failed to convert R", __func__);
-		goto free_bn;
+		Do_ADBG_Log("%s: %s failed", __func__, "BN_bin2bn");
+		goto exit;
 	}
 
 	bn_s = BN_bin2bn(raw_sig + half_size, half_size, NULL);
 	if (!ADBG_EXPECT_NOT_NULL(c, bn_s)) {
-		Do_ADBG_Log("%s: Failed to convert S", __func__);
+		Do_ADBG_Log("%s: %s failed", __func__, "BN_bin2bn");
 		goto free_bn;
 	}
 
@@ -194,50 +266,45 @@ static int convert_raw_sig_to_openssl_sig(ADBG_Case_t *const c,
 	 * When using ECDSA_SIG_set0, the memory management changes so after
 	 * this call, the pointer on the BIGNUM shall not be free directly
 	 */
-#if OPENSSL_VERSION_NUMBER <= 0x10100006L
-	ec_sig->r = bn_r;
-	ec_sig->s = bn_s;
-#else
-	ret = ECDSA_SIG_set0(ec_sig, bn_r, bn_s);
-	if (!ADBG_EXPECT(c, 1, ret)) {
-		Do_ADBG_Log("%s: Failed to set R and S to signature", __func__);
+	success = ECDSA_SIG_set0(sig, bn_r, bn_s);
+	if (!ADBG_EXPECT(c, 1, success)) {
+		Do_ADBG_Log("%s: %s failed", __func__, "ECDSA_SIG_set0");
 		goto free_bn;
 	}
-#endif
 
-	ret = i2d_ECDSA_SIG(ec_sig, NULL);
-	if (ret == 0) {
-		Do_ADBG_Log("%s: Failed to get size for signature", __func__);
-		ret = EXIT_FAILURE;
+	success = ECDSA_do_verify(digest, SHA256_DIGEST_LENGTH, sig, key);
+	if (!ADBG_EXPECT(c, 1, success)) {
+		Do_ADBG_Log("%s: %s failed", __func__, "ECDSA_do_verify");
 		goto exit;
 	}
-	sig_req_size = ret;
-
-	if (sig_req_size > *der_sig_size) {
-		Do_ADBG_Log("%s: Buffer too small: %zu needed, %zu provided",
-			    __func__, sig_req_size, *der_sig_size);
-		*der_sig_size = sig_req_size;
-		ret = EXIT_FAILURE;
-		goto exit;
-	}
-	*der_sig_size = i2d_ECDSA_SIG(ec_sig, &p);
 
 	ret = EXIT_SUCCESS;
-
 	goto exit;
 
 free_bn:
-	if (bn_r)
-		BN_free(bn_r);
-	if (bn_s)
-		BN_free(bn_s);
+	free(bn_s);
+	free(bn_r);
 
 exit:
-	if (ec_sig)
-		ECDSA_SIG_free(ec_sig);
+	print_ossl_errors();
+	ECDSA_SIG_free(sig);
+	EC_KEY_free(key);
+	EC_POINT_free(pub);
+	EC_GROUP_free(group);
+	BN_CTX_free(bn_ctx);
+	free(der_pubkey);
 
 	return ret;
 }
+#else  /* OPENSSL_FOUND */
+static int verify_msg_sig_openssl(ADBG_Case_t *const c, uint8_t *mpmr_msg,
+				  size_t mpmr_msg_size, const uint8_t *raw_sig,
+				  size_t raw_sig_size, const uint8_t *pubkey,
+				  size_t pubkey_size)
+{
+	return EXIT_FAILURE;
+}
+#endif /* OPENSSL_FOUND */
 
 /*
  * Call MP API to sign a message using CAAM MP private key and verify it
@@ -246,8 +313,8 @@ exit:
  * When verifying it, the concatenated message must also be used
  */
 static int sign_verify_message(ADBG_Case_t *const c, TEEC_Session *sess,
-			       size_t msg_size, uint8_t *pubkey_pem,
-			       size_t pubkey_pem_size)
+			       size_t msg_size, uint8_t *pubkey,
+			       size_t pubkey_size)
 {
 	int ret = EXIT_FAILURE;
 	TEEC_Result res = TEEC_ERROR_GENERIC;
@@ -255,8 +322,6 @@ static int sign_verify_message(ADBG_Case_t *const c, TEEC_Session *sess,
 	uint32_t err_origin = 0;
 	size_t raw_sig_size = MP_PUBKEY_SIZE_NAX;
 	uint8_t *raw_sig = NULL;
-	size_t der_sig_size = 256;
-	uint8_t *der_sig = NULL;
 	/*
 	 * The message to verify is the concatenation of the MPMR and the
 	 * original message
@@ -279,13 +344,6 @@ static int sign_verify_message(ADBG_Case_t *const c, TEEC_Session *sess,
 	if (!ADBG_EXPECT_NOT_NULL(c, raw_sig)) {
 		Do_ADBG_Log("%s: %s failed: %" PRIx32,
 			    "Allocation of signature", __func__, ret);
-		goto exit;
-	}
-
-	der_sig = malloc(der_sig_size);
-	if (!ADBG_EXPECT_NOT_NULL(c, der_sig)) {
-		Do_ADBG_Log("%s: %s failed: %" PRIx32,
-			    "Allocation of signature DER", __func__, ret);
 		goto exit;
 	}
 
@@ -318,22 +376,11 @@ static int sign_verify_message(ADBG_Case_t *const c, TEEC_Session *sess,
 		goto exit;
 	}
 
-	ret = convert_raw_sig_to_openssl_sig(c, raw_sig, raw_sig_size, der_sig,
-					     &der_sig_size);
-	if (!ADBG_EXPECT(c, 0, ret)) {
-		Do_ADBG_Log("%s: %s failed: %" PRIx32, __func__,
-			    "convert_raw_sig_to_openssl_sig", ret);
-		ret = EXIT_FAILURE;
-		goto exit;
-	}
-
-	/* Verify signature with openssl */
-	ret = verify_msg_sig(c, mpmr_msg, mpmr_msg_size, der_sig, der_sig_size,
-			     pubkey_pem, pubkey_pem_size);
+	ret = verify_msg_sig_openssl(c, mpmr_msg, mpmr_msg_size, raw_sig,
+				     raw_sig_size, pubkey, pubkey_size);
 	if (!ADBG_EXPECT(c, EXIT_SUCCESS, ret)) {
 		Do_ADBG_Log("%s: %s failed: %" PRIx32, __func__,
-			    "verify_msg_sig", ret);
-		ret = EXIT_FAILURE;
+			    "verify_msg_sig_openssl", ret);
 		goto exit;
 	}
 
@@ -342,7 +389,6 @@ static int sign_verify_message(ADBG_Case_t *const c, TEEC_Session *sess,
 exit:
 	free(mpmr_msg);
 	free(raw_sig);
-	free(der_sig);
 
 	return ret;
 }
@@ -400,6 +446,11 @@ static void nxp_crypto_0020(ADBG_Case_t *const c)
 		return;
 	}
 
+#ifndef OPENSSL_FOUND
+	Do_ADBG_Log("Skip test, openssl not found");
+	return;
+#endif /* OPENSSL_FOUND */
+
 	pubkey = malloc(pubkey_size);
 	if (!ADBG_EXPECT_NOT_NULL(c, pubkey))
 		goto exit;
@@ -430,8 +481,8 @@ static void nxp_crypto_0020(ADBG_Case_t *const c)
 	     msg_size += msg_size_range_start) {
 		Do_ADBG_BeginSubCase(c, "Sign message of size %zu", msg_size);
 
-		ret = sign_verify_message(c, &sess, msg_size, pubkey_pem,
-					  pubkey_pem_size);
+		ret = sign_verify_message(c, &sess, msg_size, pubkey,
+					  pubkey_size);
 		if (!ADBG_EXPECT(c, EXIT_SUCCESS, ret)) {
 			Do_ADBG_EndSubCase(c, NULL);
 			goto exit;
