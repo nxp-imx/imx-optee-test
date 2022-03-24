@@ -70,8 +70,8 @@ TEE_Result TA_PrepareGen(uint32_t ParamTypes, TEE_Param Params[4])
 
 	objType = TEE_ALG_GET_KEY_TYPE(alg_id, with_private);
 
-	DMSG("alg: %" PRIx32 " obj: %" PRIx32 " size: %zu", alg_id, objType,
-	     keysize);
+	DMSG("alg: %" PRIx32 " obj: %" PRIx32 " size: %" PRIx32, alg_id,
+	     objType, keysize);
 
 	/* Clean in case previous call corrupted it */
 	TA_FreeGen();
@@ -80,12 +80,14 @@ TEE_Result TA_PrepareGen(uint32_t ParamTypes, TEE_Param Params[4])
 	switch (objType) {
 	case TEE_TYPE_RSA_KEYPAIR:
 		if (keysize < 256 || keysize > 4096) {
-			EMSG("RSA key pair size %zu out of bound", keysize);
+			EMSG("RSA key pair size %" PRIx32 " out of bound",
+			     keysize);
 			return TEE_ERROR_BAD_PARAMETERS;
 		}
 
 		if (keysize % 64) {
-			EMSG("RSA key pair %zu quanta not respected", keysize);
+			EMSG("RSA key pair %" PRIx32 " quanta not respected",
+			     keysize);
 			return TEE_ERROR_BAD_PARAMETERS;
 		}
 
@@ -93,12 +95,14 @@ TEE_Result TA_PrepareGen(uint32_t ParamTypes, TEE_Param Params[4])
 
 	case TEE_TYPE_DSA_KEYPAIR:
 		if (keysize < 512 || keysize > 3072) {
-			EMSG("RSA key pair size %zu out of bound", keysize);
+			EMSG("RSA key pair size %" PRIx32 " out of bound",
+			     keysize);
 			return TEE_ERROR_BAD_PARAMETERS;
 		}
 
 		if (keysize % 64) {
-			EMSG("RSA key pair %zu quanta not respected", keysize);
+			EMSG("RSA key pair %" PRIx32 " quanta not respected",
+			     keysize);
 			return TEE_ERROR_BAD_PARAMETERS;
 		}
 
@@ -136,7 +140,8 @@ TEE_Result TA_PrepareGen(uint32_t ParamTypes, TEE_Param Params[4])
 		base_len = keysize / 64;
 
 		if (keysize < 256 || keysize > 2048) {
-			EMSG("DH key pair size %zu out of bound", keysize);
+			EMSG("DH key pair size %" PRIx32 " out of bound",
+			     keysize);
 			return TEE_ERROR_BAD_PARAMETERS;
 		}
 
@@ -165,7 +170,8 @@ TEE_Result TA_PrepareGen(uint32_t ParamTypes, TEE_Param Params[4])
 
 	case TEE_TYPE_ECDSA_KEYPAIR:
 		if (keysize < 192 || keysize > 521) {
-			EMSG("ECDSA key pair size %zu out of bound", keysize);
+			EMSG("ECDSA key pair size %" PRIx32 " out of bound",
+			     keysize);
 			return TEE_ERROR_BAD_PARAMETERS;
 		}
 
@@ -204,7 +210,8 @@ TEE_Result TA_PrepareGen(uint32_t ParamTypes, TEE_Param Params[4])
 
 	case TEE_TYPE_ECDH_KEYPAIR:
 		if (keysize < 192 || keysize > 521) {
-			EMSG("ECDH key pair size %zu out of bound", keysize);
+			EMSG("ECDH key pair size %" PRIx32 " out of bound",
+			     keysize);
 			return TEE_ERROR_BAD_PARAMETERS;
 		}
 
@@ -252,8 +259,8 @@ TEE_Result TA_PrepareGen(uint32_t ParamTypes, TEE_Param Params[4])
 	res = TEE_AllocateTransientObject(objType, keysize, &hkey_gen);
 	CHECK(res, "TEE_AllocateTransientObject Cipher", {});
 
-	DMSG("hkey_gen %p, keysize %zu, key_gen_nb_attrs %" PRId32, hkey_gen,
-	     keysize, key_gen_nb_attrs);
+	DMSG("hkey_gen %p, keysize %" PRIx32 ", key_gen_nb_attrs %" PRId32,
+	     hkey_gen, keysize, key_gen_nb_attrs);
 
 	return res;
 }
@@ -277,8 +284,8 @@ TEE_Result TA_Generate(uint32_t ParamTypes, TEE_Param Params[4])
 
 	TEE_ResetTransientObject(hkey_gen);
 
-	DMSG("hkey_gen %p, keysize %zu, key_gen_nb_attrs %" PRId32, hkey_gen,
-	     keysize, key_gen_nb_attrs);
+	DMSG("hkey_gen %p, keysize %" PRIx32 ", key_gen_nb_attrs %" PRId32,
+	     hkey_gen, keysize, key_gen_nb_attrs);
 
 	res = TEE_GenerateKey(hkey_gen, keysize, key_gen_attrs,
 			      key_gen_nb_attrs);
