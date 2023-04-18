@@ -62,8 +62,8 @@ TEE_Result TA_KeyDerivePrepareAlgo(uint32_t algo, TEE_Param params[4])
 	TEE_Attribute    attrs[5];
 	uint8_t          nb_attrs = 0;
 
-	uint32_t keysize;
-	uint32_t op_keysize;
+	size_t keysize;
+	size_t op_keysize;
 
 	keysize = params[1].value.a;
 
@@ -123,23 +123,23 @@ TEE_Result TA_KeyDerivePrepareAlgo(uint32_t algo, TEE_Param params[4])
 		attrs[0].content.value.b = sizeof(int);
 
 		switch (algo) {
-		case TEE_ALG_ECDH_P192:
+		case __OPTEE_ALG_ECDH_P192:
 			attrs[0].content.value.a = TEE_ECC_CURVE_NIST_P192;
 			break;
 
-		case TEE_ALG_ECDH_P224:
+		case __OPTEE_ALG_ECDH_P224:
 			attrs[0].content.value.a =  TEE_ECC_CURVE_NIST_P224;
 			break;
 
-		case TEE_ALG_ECDH_P256:
+		case __OPTEE_ALG_ECDH_P256:
 			attrs[0].content.value.a =  TEE_ECC_CURVE_NIST_P256;
 			break;
 
-		case TEE_ALG_ECDH_P384:
+		case __OPTEE_ALG_ECDH_P384:
 			attrs[0].content.value.a = TEE_ECC_CURVE_NIST_P384;
 			break;
 
-		case TEE_ALG_ECDH_P521:
+		case __OPTEE_ALG_ECDH_P521:
 			attrs[0].content.value.a = TEE_ECC_CURVE_NIST_P521;
 			keysize = 528;
 			break;
@@ -210,8 +210,8 @@ TEE_Result TA_KeyDeriveProcessAlgo(uint32_t algo, TEE_Param params[4])
 	TEE_Attribute attrs[2];
 	uint8_t       nb_attrs = 0;
 	void *out;
-	uint32_t inSize;
-	uint32_t outSize;
+	size_t inSize;
+	size_t outSize;
 
 	inSize  = params[0].memref.size;
 	out     = params[1].memref.buffer;

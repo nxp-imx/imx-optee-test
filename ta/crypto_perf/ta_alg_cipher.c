@@ -183,8 +183,8 @@ TEE_Result TA_CipherProcessAlgo(uint32_t algo __unused, TEE_Param params[4])
 	/* Cipher Process: Don't need to check again input params */
 	TEE_Result res;
 	void *in, *out;
-	uint32_t inSize;
-	uint32_t outSize;
+	size_t inSize;
+	size_t outSize;
 
 	in      = params[0].memref.buffer;
 	inSize  = params[0].memref.size;
@@ -207,8 +207,8 @@ TEE_Result TA_CipherFreeAlgo(uint32_t algo, TEE_Param params[4])
 	/* Cipher Free: Don't need to check again input params */
 	TEE_Result res;
 	void *in, *out;
-	uint32_t inSize;
-	uint32_t outSize;
+	size_t inSize;
+	size_t outSize;
 
 	in      = params[0].memref.buffer;
 	inSize  = 0;

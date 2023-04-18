@@ -227,8 +227,8 @@ TEE_Result TA_AsymDigestProcessAlgo(uint32_t algo, TEE_Param params[4])
 	 */
 	TEE_Result res;
 	void *in, *out;
-	uint32_t inSize;
-	uint32_t outSize;
+	size_t inSize;
+	size_t outSize;
 	TEE_Attribute attrs[1];
 	uint8_t       nb_attrs = 0;
 
