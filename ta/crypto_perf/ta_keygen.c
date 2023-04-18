@@ -216,23 +216,23 @@ TEE_Result TA_PrepareGen(uint32_t ParamTypes, TEE_Param Params[4])
 		}
 
 		switch (alg_id) {
-		case TEE_ALG_ECDH_P192:
+		case __OPTEE_ALG_ECDH_P192:
 			curve = TEE_ECC_CURVE_NIST_P192;
 			break;
 
-		case TEE_ALG_ECDH_P224:
+		case __OPTEE_ALG_ECDH_P224:
 			curve = TEE_ECC_CURVE_NIST_P224;
 			break;
 
-		case TEE_ALG_ECDH_P256:
+		case __OPTEE_ALG_ECDH_P256:
 			curve = TEE_ECC_CURVE_NIST_P256;
 			break;
 
-		case TEE_ALG_ECDH_P384:
+		case __OPTEE_ALG_ECDH_P384:
 			curve = TEE_ECC_CURVE_NIST_P384;
 			break;
 
-		case TEE_ALG_ECDH_P521:
+		case __OPTEE_ALG_ECDH_P521:
 			curve = TEE_ECC_CURVE_NIST_P521;
 			break;
 

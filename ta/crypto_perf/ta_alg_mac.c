@@ -189,8 +189,8 @@ TEE_Result TA_MacFreeAlgo(uint32_t algo __unused, TEE_Param params[4])
 	/* Mac Free: Don't need to check again input params */
 	TEE_Result res;
 	void *in, *out;
-	uint32_t inSize;
-	uint32_t outSize;
+	size_t inSize;
+	size_t outSize;
 
 	in      = params[0].memref.buffer;
 	/*

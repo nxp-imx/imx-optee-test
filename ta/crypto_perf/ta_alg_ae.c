@@ -18,7 +18,7 @@ static TEE_OperationHandle authenDec_op;
 
 static uint8_t tag[64];
 static size_t  tag_len;
-static uint32_t gen_tag_len;
+static size_t gen_tag_len;
 static uint8_t nonce[15];
 static size_t  nonce_len;
 static uint8_t aad[16];
@@ -155,8 +155,8 @@ TEE_Result TA_AuthenEncProcessAlgo(uint32_t algo __unused, TEE_Param params[4])
 	/* Cipher Process: Don't need to check again input params */
 	TEE_Result res;
 	uint8_t *in, *out;
-	uint32_t inSize;
-	uint32_t outSize;
+	size_t inSize;
+	size_t outSize;
 	uint32_t nb_loop;
 	size_t   payload_len;
 
