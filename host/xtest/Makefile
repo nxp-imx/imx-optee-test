@@ -104,6 +104,7 @@ srcs += regression_nxp/dek_blob/dek_blob.c
 srcs += regression_nxp/ocotp/ocotp.c
 srcs += regression_nxp/digprog/digprog.c
 srcs += regression_nxp/crypto/mp_signature.c
+srcs += regression_nxp/trusted_arm_ce/trusted_arm_ce.c
 endif
 
 objs 	:= $(patsubst %.c,$(out-dir)/xtest/%.o, $(srcs))
@@ -189,6 +190,7 @@ ifdef CFG_REGRESSION_NXP
 	$(q)mkdir -p $(out-dir)/xtest/regression_nxp/dek_blob
 	$(q)mkdir -p $(out-dir)/xtest/regression_nxp/ocotp
 	$(q)mkdir -p $(out-dir)/xtest/regression_nxp/digprog
+	$(q)mkdir -p $(out-dir)/xtest/regression_nxp/trusted_arm_ce
 endif
 	@echo '  CC      $<'
 	$(q)$(CC) $(CFLAGS) -c $< -o $@
