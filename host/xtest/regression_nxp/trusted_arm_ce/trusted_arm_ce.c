@@ -203,11 +203,15 @@ static TEEC_Result pta_cipher(TEEC_Session *session, uint32_t alg,
 		goto err;
 
 	buffer = map_memory(pa, buffer_length);
-	if (!buffer)
+	if (!buffer) {
+		res = TEEC_ERROR_GENERIC;
 		goto err;
+	}
 
-	if (read_random(buffer, data_length))
+	if (read_random(buffer, data_length)) {
+		res = TEEC_ERROR_GENERIC;
 		goto err;
+	}
 
 	input_pa = pa;
 	output_pa = pa + ROUNDUP(data_length, 4);
