@@ -24,7 +24,7 @@ struct chip_uid_test_case {
 
 static const struct chip_uid_test_case chip_uid_tc[] = {
 	UID_TC(0, TEEC_ERROR_BAD_PARAMETERS),
-	UID_TC(-1, TEEC_ERROR_OUT_OF_MEMORY),
+	UID_TC(-1, TEEC_ERROR_GENERIC),
 	UID_TC(1, TEEC_ERROR_BAD_PARAMETERS),
 	UID_TC(7, TEEC_ERROR_BAD_PARAMETERS),
 	UID_TC(8, TEEC_SUCCESS),
