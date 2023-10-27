@@ -33,7 +33,7 @@ static const struct chip_uid_test_case chip_uid_tc[] = {
 	UID_TC(255, TEEC_ERROR_BAD_PARAMETERS),
 };
 
-static void chip_uid(ADBG_Case_t *c)
+static TEEC_Result chip_uid(ADBG_Case_t *c)
 {
 	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_UUID uuid = PTA_OCOTP_UUID;
@@ -88,6 +88,8 @@ static void chip_uid(ADBG_Case_t *c)
 err:
 	Do_ADBG_EndSubCase(c, "Test i.MX Chip IUD read");
 	TEEC_CloseSession(&session);
+
+	return res;
 }
 
 #define FUSE_READ_TC(_b, _w, _exp_res) \
@@ -186,7 +188,9 @@ static void ocotp_pta(ADBG_Case_t *c)
 
 	Do_ADBG_EndSubCase(c, "Open OCOTP PTA");
 
-	chip_uid(c);
+	if (chip_uid(c))
+		return;
+
 	fuse_read(c);
 }
 ADBG_CASE_DEFINE(regression_nxp, 0010, ocotp_pta, "Test i.MX OCOTP PTA");
